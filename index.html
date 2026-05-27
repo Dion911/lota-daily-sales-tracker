@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Lota Sales"/>
+<meta name="theme-color" content="#c4722a"/>
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1916"/>
+<title>Lota Sales Tracker</title>
+<link rel="manifest" href="./manifest.json"/>
+<link rel="apple-touch-icon" href="./icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#584c3a', 'ink-2': '#7a6e5c', 'ink-3': '#9a8e7e',
+        paper: '#edeae2', 'paper-2': '#e1ded6', 'paper-3': '#d4d1c8', 'paper-4': '#c7c4bc',
+        lota: '#ae7556', 'lota-2': '#8d5f42', 'lota-3': '#f5ebe3',
+        gold: '#b89660',
+      },
+      fontFamily: {
+        sans:  ['Inter', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        serif: ['Inter', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+      },
+      borderRadius: {
+        'xl':  '16px',
+        '2xl': '24px',
+        '3xl': '28px',
+      },
+    }
+  },
+  safelist: [
+    'text-lota','border-lota','bg-lota','bg-lota-3',
+    'text-ink','text-ink-2','text-ink-3',
+    'bg-paper','bg-paper-2','bg-paper-3','border-paper-3',
+    'text-gold','bg-gold',
+  ]
+};
+</script>
+<style>
+:root {
+  /* colours — updated palette */
+  --color-ink:    #584c3a; --color-ink-2:  #7a6e5c; --color-ink-3:  #9a8e7e;
+  --color-paper:  #edeae2; --color-paper-2:#e1ded6; --color-paper-3:#d4d1c8; --color-paper-4:#c7c4bc;
+  --color-lota:   #ae7556; --color-lota-2: #8d5f42; --color-lota-3: #f5ebe3;
+  --color-gold:   #b89660;
+  /* refined shadows — layered, not dramatic */
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.07);
+  --shadow-card-lg: 0 2px 6px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* ── Base ────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body {
+  background-color: var(--color-paper);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Card surfaces ───────────────────────────────────────────────── */
+.bg-white { background-color: #faf8f3 !important; }   /* soft white per design.md */
+.rounded-xl  { box-shadow: var(--shadow-card); }
+.rounded-2xl { box-shadow: var(--shadow-card-lg); }
+.rounded-full { box-shadow: none !important; }         /* pills / circular buttons */
+input, select, textarea { box-shadow: none !important; }
+
+/* ── Borders — minimal hairlines ────────────────────────────────── */
+[class*="border-paper-3"] { border-color: rgba(0,0,0,0.07) !important; }
+.divide-paper-3 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(0,0,0,0.06) !important; }
+
+/* ── Hero header — premium card shape, not a flat banner ────────── */
+.text-white.relative.overflow-hidden.shrink-0 {
+  border-radius: 0 0 28px 28px;
+}
+/* less tall: reduce inner content bottom padding */
+.text-white.relative.overflow-hidden > div:last-child {
+  padding-bottom: 14px !important;
+}
+/* Hero h1: clean Inter semibold */
+h1.font-serif {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
+  font-style: normal !important;
+}
+/* Hero financial numbers: clear, not theatrical */
+.text-white.relative p.text-3xl {
+  font-size: 26px !important;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────── */
+.sticky.top-0.shadow-sm {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04);
+}
+.sticky.top-0 button {
+  font-weight: 400 !important;
+  letter-spacing: 0.07em;
+  border-bottom: none !important;    /* override JSX inline borderBottom */
+  position: relative;
+}
+.sticky.top-0 button.text-lota {
+  font-weight: 500 !important;
+}
+/* Centered dot indicator replaces full-width underline */
+.sticky.top-0 button.text-lota::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%; transform: translateX(-50%);
+  width: 20px; height: 2px;
+  border-radius: 1px;
+  background-color: var(--color-lota);
+}
+
+/* ── Category pills ──────────────────────────────────────────────── */
+button.whitespace-nowrap { border-radius: 12px !important; }
+button.whitespace-nowrap.text-ink-3 {
+  background: rgba(255,255,255,0.45) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* ── Typography — font-serif is now Inter ────────────────────────── */
+.font-serif {
+  font-style: normal !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+/* weight discipline: bold only for financial numbers */
+p.text-sm.font-bold.text-ink { font-weight: 500 !important; }
+
+/* ── Best Day card — warm brand tone, not neon ───────────────────── */
+.bg-lota-3.rounded-xl {
+  background-color: var(--color-lota-3) !important;   /* #fdf0e4 warm tint */
+  border-color: rgba(196,114,42,0.15) !important;
+}
+.bg-lota-3.rounded-xl .text-lota-2 { color: var(--color-lota-2) !important; }
+.bg-lota-3.rounded-xl .text-lota   { color: var(--color-lota)   !important; }
+
+/* ── SVG chart — sync all hardcoded fills to current palette ─────── */
+svg text { font-family: Inter, 'Helvetica Neue', Arial, sans-serif !important; }
+svg rect[fill="#c4722a"] { fill: var(--color-lota);   }   /* today's bar → new brand */
+svg text[fill="#c4722a"] { fill: var(--color-lota);   }   /* today's label */
+svg rect[fill="#e2dcd0"] { fill: var(--color-paper-3); }  /* historical bars */
+svg text[fill="#9a958f"] { fill: var(--color-ink-3);  }   /* historical labels */
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes fadeIn  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.18s ease-out forwards; }
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.slide-up { animation: slideUp 0.22s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+@keyframes stamp {
+  0%   { transform: scale(1.18); opacity: 0; }
+  35%  { transform: scale(0.95); opacity: 1; }
+  55%  { transform: scale(1.03); opacity: 1; }
+  72%  { transform: scale(0.98); opacity: 1; }
+  85%  { transform: scale(1.01); opacity: 1; }
+  100% { transform: scale(1.00); opacity: 1; }
+}
+.splash-stamp { animation: stamp 0.65s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+@keyframes pinShake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-8px); }
+  40%     { transform: translateX(8px); }
+  60%     { transform: translateX(-6px); }
+  80%     { transform: translateX(6px); }
+}
+.pin-shake { animation: pinShake 0.45s ease forwards; }
+@keyframes pinFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.pin-fade-in { animation: pinFadeIn 0.4s ease forwards; }
+
+/* ── Dark mode (class-driven so JS toggle works) ─────────────────── */
+html.dark {
+  --color-ink:    #f0e8e0; --color-ink-2:  #c8b8aa; --color-ink-3:  #9a8478;
+  --color-paper:  #694b3b; --color-paper-2:#755747; --color-paper-3:#806250; --color-paper-4:#8a6b58;
+  --color-lota:   #e0a882; --color-lota-2: #c48d6a; --color-lota-3: #5a3828;
+  --color-gold:   #d4b47a;
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.25);
+  --shadow-card-lg: 0 2px 6px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.3);
+}
+html.dark body,
+html.dark .bg-paper   { background-color: var(--color-paper)   !important; }
+html.dark .bg-paper-2 { background-color: var(--color-paper-2) !important; }
+html.dark .bg-paper-3 { background-color: var(--color-paper-3) !important; }
+html.dark .bg-white   { background-color: #7d5f4f !important; }
+html.dark .text-ink   { color: var(--color-ink)    !important; }
+html.dark .text-ink-2 { color: var(--color-ink-2)  !important; }
+html.dark .text-ink-3 { color: var(--color-ink-3)  !important; }
+html.dark .text-lota  { color: var(--color-lota)   !important; }
+html.dark .text-lota-2{ color: var(--color-lota-2) !important; }
+html.dark .bg-lota-3  { background-color: var(--color-lota-3) !important; }
+html.dark .bg-ink     { background-color: var(--color-ink)    !important; }
+html.dark .text-paper { color: var(--color-paper)  !important; }
+html.dark [class*="border-paper-3"] { border-color: rgba(255,255,255,0.07) !important; }
+html.dark .divide-paper-3 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255,255,255,0.05) !important; }
+html.dark .border-b   { border-color: rgba(255,255,255,0.07) !important; }
+html.dark input, html.dark select, html.dark textarea {
+  background-color: var(--color-paper-2) !important;
+  color: var(--color-ink) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder { color: var(--color-ink-3) !important; opacity: 1; }
+html.dark .sticky.top-0.shadow-sm {
+  background-color: var(--color-paper) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.5) !important;
+}
+html.dark button.whitespace-nowrap.text-ink-3 {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html.dark svg rect[fill="#e2dcd0"] { fill: var(--color-paper-3); }
+</style>
+</head>
+<body class="bg-paper text-ink font-sans">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── ICONS ───────────────────────────────────────────────────────────────────
+function Ico({ d, size=16, className='', strokeWidth=1.5, fill='none' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      {d.split('|').map((p,i) => <path key={i} d={p.trim()}/>)}
+    </svg>
+  );
+}
+const Plus      = p => <Ico {...p} d="M12 5v14|M5 12h14"/>;
+const Minus     = p => <Ico {...p} d="M5 12h14"/>;
+const Check     = p => <Ico {...p} d="M20 6L9 17l-5-5"/>;
+const XIco      = p => <Ico {...p} d="M18 6L6 18|M6 6l12 12"/>;
+const Trash2    = p => <Ico {...p} d="M3 6h18|M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 5v6m4-6v6"/>;
+const Settings  = p => <Ico {...p} d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8.22-1.41a8.08 8.08 0 0 0 .07-1.59 8.08 8.08 0 0 0-.07-1.59l-2.2-1.73a8 8 0 0 0-.66-1.14l.83-2.62a9.95 9.95 0 0 0-2.77-1.6l-2.28 1.36a8.13 8.13 0 0 0-1.33 0L9.71 4.32a9.95 9.95 0 0 0-2.77 1.6l.83 2.62a8 8 0 0 0-.66 1.14L4.9 11.41a8.08 8.08 0 0 0-.07 1.59 8.08 8.08 0 0 0 .07 1.59l2.2 1.73a8 8 0 0 0 .66 1.14l-.83 2.62a9.95 9.95 0 0 0 2.77 1.6l2.28-1.36a8.13 8.13 0 0 0 1.33 0l2.28 1.36a9.95 9.95 0 0 0 2.77-1.6l-.83-2.62a8 8 0 0 0 .66-1.14z"/>;
+const Calendar  = p => <Ico {...p} d="M8 2v4|M16 2v4|M3 10h18|M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>;
+const BarChart2 = p => <Ico {...p} d="M18 20V10|M12 20V4|M6 20v-6"/>;
+const Download  = p => <Ico {...p} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M7 10l5 5 5-5|M12 15V3"/>;
+const Upload    = p => <Ico {...p} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M17 8l-5-5-5 5|M12 3v12"/>;
+const ChevDown  = p => <Ico {...p} d="M6 9l6 6 6-6"/>;
+const ChevUp    = p => <Ico {...p} d="M18 15l-6-6-6 6"/>;
+const RotateCcw = p => <Ico {...p} d="M1 4v6h6|M3.51 15a9 9 0 1 0 .49-4.75"/>;
+const Ban       = p => <Ico {...p} d="M18.364 5.636a9 9 0 1 1-12.728 12.728A9 9 0 0 1 18.364 5.636zM5.636 5.636l12.728 12.728"/>;
+const Share     = p => <Ico {...p} d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8|M16 6l-4-4-4 4|M12 2v13"/>;
+const SearchIco = p => <Ico {...p} d="M21 21l-4.35-4.35|M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0"/>;
+const MoonIco   = p => <Ico {...p} d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>;
+const SunIco    = p => <Ico {...p} d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7z|M12 1v2|M12 21v2|M4.22 4.22l1.42 1.42|M18.36 18.36l1.42 1.42|M1 12h2|M21 12h2|M4.22 19.78l1.42-1.42|M18.36 5.64l1.42-1.42"/>;
+const PenIco    = p => <Ico {...p} d="M12 20h9|M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>;
+
+// ─── MENU DATA ────────────────────────────────────────────────────────────────
+const DEFAULT_MENU = [
+  {id:'c1', name:'Americano',                           price:60,  category:'Coffee'},
+  {id:'c2', name:'Vietnamese Coffee',                   price:75,  category:'Coffee'},
+  {id:'c3', name:'Cafe Latte',                          price:75,  category:'Coffee'},
+  {id:'c4', name:'Spanish Latte',                       price:75,  category:'Coffee'},
+  {id:'c5', name:'Cafe Mocha',                          price:75,  category:'Coffee'},
+  {id:'cb1',name:'Cold Brew Soda',                      price:95,  category:'Cold Brew'},
+  {id:'cb2',name:'Cold Brew Vanilla Latte',             price:95,  category:'Cold Brew'},
+  {id:'cb3',name:'Cold Brew Mocha Caramel',             price:95,  category:'Cold Brew'},
+  {id:'m1', name:'Matcha Latte',                        price:100, category:'Matcha | Smoothies'},
+  {id:'m2', name:'Mango Smoothie',                      price:90,  category:'Matcha | Smoothies'},
+  {id:'m3', name:'Strawberry Smoothie',                 price:90,  category:'Matcha | Smoothies'},
+  {id:'m4', name:'Blueberry Smoothie',                  price:90,  category:'Matcha | Smoothies'},
+  {id:'s1', name:'Fruit Salad',                         price:40,  category:'Snacks'},
+  {id:'s2', name:'Cheese Sticks (6 Sticks)',            price:40,  category:'Snacks'},
+  {id:'s3', name:'Nacho Chips + Salsa',                 price:60,  category:'Snacks'},
+  {id:'s4', name:'French Fries',                        price:60,  category:'Snacks'},
+  {id:'s5', name:'Tuna Tacos (2 Minis)',                price:60,  category:'Snacks'},
+  {id:'s6', name:'Chicken/Pork Adobo Tacos (2 Minis)', price:60,  category:'Snacks'},
+  {id:'s7', name:'Egg Waffle Regular',                  price:65,  category:'Snacks'},
+  {id:'s8', name:'Egg Waffle Cheese',                   price:70,  category:'Snacks'},
+  {id:'s9', name:'Egg Waffle w/ Ice Cream + Syrup',     price:80,  category:'Snacks'},
+  {id:'sp1',name:'Tapsilog',                            price:80,  category:'Silog & Pasta'},
+  {id:'sp2',name:'Tocilog',                             price:80,  category:'Silog & Pasta'},
+  {id:'sp3',name:'Cornsilog',                           price:80,  category:'Silog & Pasta'},
+  {id:'sp4',name:'Hotsilog',                            price:80,  category:'Silog & Pasta'},
+  {id:'sp5',name:'Spam Silog',                          price:80,  category:'Silog & Pasta'},
+  {id:'sp6',name:'Humba Silog',                         price:80,  category:'Silog & Pasta'},
+  {id:'sp7',name:'Carbonara/Spaghetti',                 price:80,  category:'Silog & Pasta'},
+  {id:'ft1',name:'Pork Belly',                          price:55,  category:'Food Takeout'},
+  {id:'ft2',name:'Fried Chicken',                       price:40,  category:'Food Takeout'},
+  {id:'ft3',name:'Chicken Adobo',                       price:40,  category:'Food Takeout'},
+  {id:'ft4',name:'Humba',                               price:40,  category:'Food Takeout'},
+  {id:'ft5',name:'Noodles',                             price:35,  category:'Food Takeout'},
+  {id:'od1',name:'Coke/Sprite/Royal Sakto',             price:20,  category:'Other Drinks'},
+  {id:'od2',name:'Coke/Sprite Mini Can',                price:30,  category:'Other Drinks'},
+  {id:'od3',name:'Coke/Sprite Litro',                   price:60,  category:'Other Drinks'},
+  {id:'od4',name:'Coke 1.5 Litro',                      price:75,  category:'Other Drinks'},
+  {id:'od5',name:'C2 Mini Apple/Other Flavors',         price:30,  category:'Other Drinks'},
+  {id:'od6',name:'Yakult',                              price:20,  category:'Other Drinks'},
+  {id:'od7',name:'Mountain Dew',                        price:30,  category:'Other Drinks'},
+  {id:'od8',name:'Chuckie Small',                       price:20,  category:'Other Drinks'},
+  {id:'od9',name:'Chuckie Reg',                         price:30,  category:'Other Drinks'},
+  {id:'od10',name:'Mineral Water Small',                price:20,  category:'Other Drinks'},
+  {id:'od11',name:'Mineral Water Big',                  price:30,  category:'Other Drinks'},
+  {id:'od12',name:'Ice Candy',                          price:10,  category:'Other Drinks'},
+  {id:'od13',name:'Ice Cream',                          price:10,  category:'Other Drinks'},
+  {id:'d1', name:'Chocolate Tiramisu',                  price:85,  category:'Desserts'},
+];
+
+// ─── HISTORY VIEW ─────────────────────────────────────────────────────────────
+function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
+  const [expanded, setExpanded] = useState(null);
+  const todayStr     = new Date().toISOString().split('T')[0];
+  const currentMonth = todayStr.slice(0, 7);
+
+  const grouped = entries.reduce((acc, e) => {
+    if (!acc[e.date]) acc[e.date] = [];
+    acc[e.date].push(e);
+    return acc;
+  }, {});
+  const dates = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+
+  if (dates.length === 0) {
+    return (
+      <div className="py-20 text-center text-ink-3 text-sm italic fade-in">
+        No sales history yet.<br/>
+        <span className="text-[11px] not-italic">Log your first entry on the Quick Entry tab.</span>
+      </div>
+    );
+  }
+
+  // ── #6 — 7-day bar chart data ──────────────────────────────────────────────
+  const last7Days = Array.from({length: 7}, (_, i) => {
+    const d = new Date(todayStr + 'T00:00:00');
+    d.setDate(d.getDate() - (6 - i));
+    const dayStr = d.toISOString().split('T')[0];
+    const rev = (grouped[dayStr] || []).reduce((s, e) => s + e.revenue, 0);
+    const label = d.toLocaleDateString('en-US', {weekday:'short'}).slice(0, 2);
+    return { dayStr, rev, label };
+  });
+  const maxRev   = Math.max(...last7Days.map(d => d.rev), 1);
+  const maxBarH  = 48, barBaseY = 64, slotW = 40, barW = 24;
+
+  // ── Rolling stats ──────────────────────────────────────────────────────────
+  const last7 = dates.filter(d => {
+    const diff = (new Date(todayStr) - new Date(d + 'T00:00:00')) / 86400000;
+    return diff >= 0 && diff <= 6;
+  });
+  const last7Total = last7.reduce((sum,d) => sum + grouped[d].reduce((s,e) => s+e.revenue, 0), 0);
+  const last7Avg   = last7.length > 0 ? Math.round(last7Total / last7.length) : 0;
+  const prev7 = dates.filter(d => {
+    const diff = (new Date(todayStr) - new Date(d + 'T00:00:00')) / 86400000;
+    return diff >= 7 && diff <= 13;
+  });
+  const prev7Total = prev7.reduce((sum,d) => sum + grouped[d].reduce((s,e) => s+e.revenue, 0), 0);
+  const weekPct = prev7Total > 0 ? Math.round(((last7Total - prev7Total) / prev7Total) * 100) : null;
+  const best = dates.reduce((b,d) => {
+    const t = grouped[d].reduce((s,e) => s+e.revenue, 0);
+    return t > b.t ? {d, t} : b;
+  }, {d:null, t:0});
+
+  // ── #7 — Category breakdown (current month) ────────────────────────────────
+  const catRevenue = {};
+  entries.filter(e => e.date.startsWith(currentMonth)).forEach(e => {
+    Object.entries(e.items).forEach(([id, qty]) => {
+      const item = menu.find(m => m.id === id);
+      if (item) catRevenue[item.category] = (catRevenue[item.category] || 0) + qty * item.price;
+    });
+  });
+  const catList    = Object.entries(catRevenue).sort((a,b) => b[1]-a[1]);
+  const maxCatRev  = catList.length > 0 ? catList[0][1] : 1;
+  const monthTotal = catList.reduce((s,[,v]) => s+v, 0);
+
+  return (
+    <div className="space-y-4 fade-in">
+
+      {/* #6 — 7-day bar chart */}
+      <div className="bg-white rounded-2xl border border-paper-3 p-4">
+        <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-3">Last 7 Days</p>
+        <svg width="100%" viewBox="0 0 280 82" preserveAspectRatio="xMidYMid meet">
+          {last7Days.map((d, i) => {
+            const barH  = d.rev > 0 ? Math.max(3, (d.rev / maxRev) * maxBarH) : 2;
+            const isToday = d.dayStr === todayStr;
+            const barX  = i * slotW + (slotW - barW) / 2;
+            const barY  = barBaseY - barH;
+            const rev$  = d.rev >= 1000 ? `${(d.rev/1000).toFixed(1)}k` : d.rev > 0 ? String(d.rev) : '';
+            return (
+              <g key={d.dayStr}>
+                <rect x={barX} y={barY} width={barW} height={barH} rx={4}
+                  fill={isToday ? '#c4722a' : '#e2dcd0'}/>
+                <text x={i*slotW+slotW/2} y={79} fontSize={9} textAnchor="middle"
+                  fill={isToday ? '#c4722a' : '#9a958f'} fontFamily="DM Mono,monospace">
+                  {d.label}
+                </text>
+                {rev$ && barH > 10 && (
+                  <text x={i*slotW+slotW/2} y={barY-3} fontSize={8} textAnchor="middle"
+                    fill={isToday ? '#c4722a' : '#9a958f'} fontFamily="DM Mono,monospace">
+                    {rev$}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          {label:'7-Day Total', value:`₱${last7Total.toLocaleString()}`, accent:true,
+           sub: weekPct !== null ? `${weekPct >= 0 ? '+' : ''}${weekPct}% vs last wk` : null,
+           subUp: weekPct !== null && weekPct >= 0},
+          {label:'Daily Avg',   value:`₱${last7Avg.toLocaleString()}`,   accent:false},
+          {label:'Days Logged', value:String(dates.length),              accent:false},
+        ].map(({label,value,accent,sub,subUp}) => (
+          <div key={label} className="bg-white rounded-xl border border-paper-3 p-3 text-center">
+            <p className="text-[9px] uppercase tracking-widest text-ink-3 mb-1">{label}</p>
+            <p className={`text-base font-serif ${accent ? 'text-lota' : 'text-ink'}`}>{value}</p>
+            {sub && (
+              <p className="text-[9px] mt-0.5 font-medium" style={{color: subUp ? '#6a9e6a' : '#b56a5a'}}>
+                {sub}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {best.d && (
+        <div className="bg-lota-3 border border-lota/20 rounded-xl px-4 py-3 flex justify-between items-center">
+          <p className="text-[10px] uppercase tracking-widest text-lota-2">Best Day</p>
+          <div className="text-right">
+            <p className="text-sm font-serif font-bold text-lota">₱{best.t.toLocaleString()}</p>
+            <p className="text-[10px] text-lota-2">{new Date(best.d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
+          </div>
+        </div>
+      )}
+
+      {/* #7 — Category breakdown (this month) */}
+      {catList.length > 0 && (
+        <div className="bg-white rounded-2xl border border-paper-3 p-4">
+          <div className="flex justify-between items-baseline mb-3">
+            <p className="text-[10px] uppercase tracking-widest text-ink-3">This Month by Category</p>
+            <p className="text-xs font-serif text-ink-2">₱{monthTotal.toLocaleString()}</p>
+          </div>
+          <div className="space-y-2.5">
+            {catList.map(([cat, rev]) => (
+              <div key={cat}>
+                <div className="flex justify-between text-[10px] mb-1">
+                  <span className="text-ink-2 truncate pr-2">{cat}</span>
+                  <span className="text-ink-3 shrink-0">₱{rev.toLocaleString()}</span>
+                </div>
+                <div className="h-1.5 bg-paper-3 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{width:`${Math.round((rev/maxCatRev)*100)}%`, backgroundColor:'var(--color-lota)'}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Day list */}
+      {dates.map(date => {
+        const dayEntries = grouped[date];
+        const dayTotal   = dayEntries.reduce((s,e) => s+e.revenue, 0);
+        const isToday    = date === todayStr;
+        const isExpanded = expanded === date;
+        const label      = isToday
+          ? 'Today'
+          : new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+        const itemMap = dayEntries.reduce((acc,e) => {
+          Object.entries(e.items).forEach(([id,q]) => { acc[id]=(acc[id]||0)+q; });
+          return acc;
+        }, {});
+        const breakdown = Object.entries(itemMap)
+          .map(([id,qty]) => ({item:menu.find(m=>m.id===id), qty, total:(menu.find(m=>m.id===id)?.price||0)*qty}))
+          .filter(x=>x.item).sort((a,b)=>b.qty-a.qty);
+        const totalItems = Object.values(itemMap).reduce((a,b)=>a+b,0);
+
+        return (
+          <div key={date} className="bg-white rounded-xl border border-paper-3 overflow-hidden">
+            <button onClick={() => setExpanded(isExpanded ? null : date)}
+              className="w-full px-4 py-3 flex justify-between items-center active:bg-paper-2 transition-colors">
+              <div className="text-left">
+                <p className={`text-sm font-medium ${isToday ? 'text-lota' : 'text-ink'}`}>{label}</p>
+                <p className="text-[10px] text-ink-3 mt-0.5">
+                  {dayEntries.length} {dayEntries.length===1?'save':'saves'} · {totalItems} items sold
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="text-lg font-serif" style={{color:'var(--color-lota)'}}>₱{dayTotal.toLocaleString()}</p>
+                {isExpanded ? <ChevUp size={14} className="text-ink-3"/> : <ChevDown size={14} className="text-ink-3"/>}
+              </div>
+            </button>
+
+            {isExpanded && (
+              <div className="border-t border-paper-3">
+                {breakdown.map(({item,qty,total}) => (
+                  <div key={item.id} className="px-4 py-2.5 flex justify-between items-center border-b border-paper-3 last:border-0">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                        style={{backgroundColor:'var(--color-lota)'}}>{qty}</div>
+                      <div>
+                        <p className="text-sm text-ink">{item.name}</p>
+                        <p className="text-[9px] text-ink-3 uppercase tracking-wide">{item.category}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-serif text-ink-2">₱{total.toLocaleString()}</p>
+                  </div>
+                ))}
+                <div className="px-4 py-2.5 bg-paper-2 flex justify-between items-center border-t border-paper-3">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-ink-2">Day Total</span>
+                  <span className="text-sm font-serif font-bold" style={{color:'var(--color-lota)'}}>₱{dayTotal.toLocaleString()}</span>
+                </div>
+                <div className="bg-paper px-4 py-2 space-y-1">
+                  {dayEntries.slice().reverse().map(entry => (
+                    <div key={entry.id} className="flex justify-between items-start py-1.5 border-b border-paper-3 last:border-0">
+                      <div>
+                        <p className="text-[10px] text-ink-3">
+                          {new Date(parseInt(entry.id)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                        </p>
+                        <p className="text-xs text-ink-2">₱{entry.revenue.toLocaleString()}</p>
+                        {entry.notes && (
+                          <p className="text-[10px] text-ink-3 italic mt-0.5">"{entry.notes}"</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { if(confirm('Delete this entry?')) setEntries(p=>p.filter(e=>e.id!==entry.id)); }}
+                        className="p-2 text-ink-3 hover:text-red-500 active:text-red-600 transition-colors shrink-0">
+                        <Trash2 size={14}/>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {/* Field note for this day */}
+                <div className="border-t border-paper-3 px-4 py-3" style={{backgroundColor:'var(--color-lota-3)'}}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <PenIco size={11} className="text-lota"/>
+                    <span className="text-[9px] uppercase tracking-widest text-lota-2 font-bold">Field Note</span>
+                  </div>
+                  {setFieldNotes ? (
+                    <textarea
+                      value={(fieldNotes && fieldNotes[date]) || ''}
+                      onChange={e => setFieldNotes(prev => ({...prev, [date]: e.target.value}))}
+                      placeholder="Add a note for this day…"
+                      rows={2}
+                      style={{
+                        width:'100%', background:'transparent', border:'none', outline:'none',
+                        resize:'none', fontSize:12, lineHeight:'1.6', color:'var(--color-ink)',
+                        fontFamily:'inherit',
+                      }}
+                    />
+                  ) : (
+                    fieldNotes && fieldNotes[date]
+                      ? <p className="text-xs text-ink-2 italic leading-relaxed">{fieldNotes[date]}</p>
+                      : <p className="text-[11px] text-ink-3 italic">No note for this day.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── MAIN SALES TRACKER ───────────────────────────────────────────────────────
+function SalesTracker() {
+  const importRef = useRef(null);
+
+  // ── Core state ──────────────────────────────────────────────────────────────
+  const [menu, setMenu] = useState(() => {
+    try { const s = localStorage.getItem('lota_menu_v5'); return s ? JSON.parse(s) : DEFAULT_MENU; } catch(e) { return DEFAULT_MENU; }
+  });
+  const [entries, setEntries] = useState(() => {
+    try { const s = localStorage.getItem('lota_sales_v3'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+  });
+  const [view,           setView]           = useState('entry');
+  const [isEditingMenu,  setIsEditingMenu]  = useState(false);
+  const [entryDate,      setEntryDate]      = useState(new Date().toISOString().split('T')[0]);
+  const [quantities,     setQuantities]     = useState({});
+  const [activeCategory, setActiveCategory] = useState('Coffee');
+  const [newItem,        setNewItem]        = useState({name:'',price:'',category:'Coffee'});
+  const [editPriceId,    setEditPriceId]    = useState(null);
+  const [editPriceVal,   setEditPriceVal]   = useState('');
+  const [toast,          setToast]          = useState(null);
+
+  // ── Feature state ────────────────────────────────────────────────────────────
+  const [dailyTarget, setDailyTarget] = useState(() => {
+    try { return parseInt(localStorage.getItem('lota_target_v1')) || 0; } catch(e) { return 0; }
+  });
+  const [soldOutIds, setSoldOutIds] = useState(() => {
+    try {
+      const s = localStorage.getItem('lota_soldout_v1');
+      if (!s) return [];
+      const d = JSON.parse(s);
+      const today = new Date().toISOString().split('T')[0];
+      return d.date === today ? (d.ids || []) : [];
+    } catch(e) { return []; }
+  });
+  const [entryNote,          setEntryNote]          = useState('');
+  const [itemSearch,         setItemSearch]         = useState('');
+  const [dismissedYestCard,  setDismissedYestCard]  = useState(false);
+  const [splashVisible,      setSplashVisible]      = useState(true);
+  const [splashFading,       setSplashFading]       = useState(false);
+  const [splashImgReady,     setSplashImgReady]     = useState(false);
+  const [pinMode,            setPinMode]            = useState(() => localStorage.getItem('lota_pin') ? 'enter' : 'setup');
+  const [pinInput,           setPinInput]           = useState('');
+  const [pinFirstEntry,      setPinFirstEntry]      = useState('');
+  const [pinError,           setPinError]           = useState(false);
+  const [darkMode,           setDarkMode]           = useState(() => {
+    const s = localStorage.getItem('lota_dark');
+    if (s !== null) return s === '1';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  const [fieldNotes,         setFieldNotes]         = useState(() => {
+    try { const s = localStorage.getItem('lota_fieldnotes_v1'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+  });
+
+  // ── Persistence effects ──────────────────────────────────────────────────────
+  useEffect(() => { localStorage.setItem('lota_menu_v5',   JSON.stringify(menu));    }, [menu]);
+  useEffect(() => { localStorage.setItem('lota_sales_v3',  JSON.stringify(entries)); }, [entries]);
+  useEffect(() => { localStorage.setItem('lota_target_v1', String(dailyTarget));     }, [dailyTarget]);
+  useEffect(() => {
+    localStorage.setItem('lota_dark', darkMode ? '1' : '0');
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
+  useEffect(() => { localStorage.setItem('lota_fieldnotes_v1', JSON.stringify(fieldNotes)); }, [fieldNotes]);
+  const handlePinKey = useCallback((key) => {
+    if (pinError) return;
+    if (key === '⌫') { setPinInput(p => p.slice(0, -1)); return; }
+    const next = pinInput + String(key);
+    if (next.length > 4) return;
+    setPinInput(next);
+    if (next.length < 4) return;
+    // Full PIN entered — evaluate after a tiny delay so last dot renders
+    setTimeout(() => {
+      if (pinMode === 'enter') {
+        if (next === localStorage.getItem('lota_pin')) {
+          setSplashFading(true);
+          setTimeout(() => setSplashVisible(false), 600);
+        } else {
+          setPinError(true);
+          setTimeout(() => { setPinError(false); setPinInput(''); }, 700);
+        }
+      } else if (pinMode === 'setup') {
+        setPinFirstEntry(next); setPinMode('confirm'); setPinInput('');
+      } else if (pinMode === 'confirm') {
+        if (next === pinFirstEntry) {
+          localStorage.setItem('lota_pin', next);
+          setSplashFading(true);
+          setTimeout(() => setSplashVisible(false), 600);
+        } else {
+          setPinError(true);
+          setTimeout(() => { setPinError(false); setPinInput(''); setPinMode('setup'); setPinFirstEntry(''); }, 700);
+        }
+      }
+    }, 80);
+  }, [pinInput, pinError, pinMode, pinFirstEntry]);
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('lota_soldout_v1', JSON.stringify({ date: today, ids: soldOutIds }));
+  }, [soldOutIds]);
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  // ── Computed values ──────────────────────────────────────────────────────────
+  const todayStr     = new Date().toISOString().split('T')[0];
+  const currentMonth = todayStr.slice(0, 7);
+  const todaySales   = entries.filter(e=>e.date===todayStr).reduce((s,e)=>s+e.revenue, 0);
+  const monthSales   = entries.filter(e=>e.date.startsWith(currentMonth)).reduce((s,e)=>s+e.revenue, 0);
+  const cats         = [...new Set(menu.map(m => m.category))];
+
+  // Top sellers — auto-sorted by all-time qty, top 8
+  const topSellers = (() => {
+    const counts = {};
+    entries.forEach(e => Object.entries(e.items).forEach(([id,qty]) => { counts[id]=(counts[id]||0)+qty; }));
+    return Object.entries(counts)
+      .sort((a,b) => b[1]-a[1])
+      .slice(0, 8)
+      .map(([id]) => menu.find(m=>m.id===id))
+      .filter(Boolean);
+  })();
+  const allCats = topSellers.length > 0 ? ['★ Faves', ...cats] : cats;
+
+  const toggleSoldOut = (id) => setSoldOutIds(prev =>
+    prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]
+  );
+  const isSoldOut = (id) => soldOutIds.includes(id);
+
+  // ── Entry logic ──────────────────────────────────────────────────────────────
+  const handleQty = (id, delta) => setQuantities(prev => {
+    const cur = prev[id]||0, next = Math.max(0, cur+delta);
+    if (!next) { const {[id]:_, ...rest} = prev; return rest; }
+    return {...prev, [id]: next};
+  });
+  const calcRevenue = Object.entries(quantities).reduce((sum,[id,qty]) => sum+((menu.find(m=>m.id===id)?.price||0)*qty), 0);
+  const totalItems  = Object.values(quantities).reduce((a,b) => a+b, 0);
+
+  const saveEntry = () => {
+    if (!Object.keys(quantities).length) return;
+    const saved = calcRevenue;
+    setEntries(prev => [
+      ...prev,
+      {id:Date.now().toString(), date:entryDate, items:{...quantities}, revenue:saved, notes:entryNote.trim()}
+    ].sort((a,b) => b.date.localeCompare(a.date)));
+    setQuantities({});
+    setEntryNote('');
+    setView('summary');
+    showToast(`₱${saved.toLocaleString()} saved!`);
+  };
+
+  const todayEntries  = entries.filter(e => e.date===todayStr);
+
+  // Yesterday close card
+  const yesterdayStr = (() => {
+    const d = new Date(todayStr + 'T12:00:00'); d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  })();
+  const yesterdayEntries = entries.filter(e => e.date === yesterdayStr);
+  const yesterdayTotal   = yesterdayEntries.reduce((s,e) => s+e.revenue, 0);
+  const yesterdayItemMap = yesterdayEntries.reduce((acc,e) => {
+    Object.entries(e.items).forEach(([id,q]) => { acc[id]=(acc[id]||0)+q; }); return acc;
+  }, {});
+  const topYestEntry = Object.entries(yesterdayItemMap).sort((a,b)=>b[1]-a[1])[0];
+  const topYestItem  = topYestEntry ? menu.find(m=>m.id===topYestEntry[0]) : null;
+
+  const todayItemMap  = todayEntries.reduce((acc,e) => {
+    Object.entries(e.items).forEach(([id,q]) => { acc[id]=(acc[id]||0)+q; });
+    return acc;
+  }, {});
+  const sortedSummary = Object.entries(todayItemMap)
+    .map(([id,qty]) => ({item:menu.find(m=>m.id===id), qty, total:(menu.find(m=>m.id===id)?.price||0)*qty}))
+    .filter(x=>x.item).sort((a,b)=>b.qty-a.qty);
+
+  // #9 — today's total items for Summary tab badge
+  const todayTotalItems = Object.values(todayItemMap).reduce((a,b) => a+b, 0);
+  const todayNote = fieldNotes[todayStr] || '';
+
+  // #8 — per-item monthly stats for settings
+  const itemMonthStats = (() => {
+    const stats = {};
+    entries.filter(e => e.date.startsWith(currentMonth)).forEach(e => {
+      Object.entries(e.items).forEach(([id, qty]) => {
+        if (!stats[id]) stats[id] = { qty: 0, revenue: 0 };
+        stats[id].qty += qty;
+        stats[id].revenue += qty * (menu.find(m => m.id === id)?.price || 0);
+      });
+    });
+    return stats;
+  })();
+
+  // Export CSV (includes ID column for reliable re-import)
+  const exportCSV = () => {
+    const rows = [['ID','Date','Time','Revenue','Notes','Items']];
+    [...entries].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e => {
+      const time  = new Date(parseInt(e.id)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const items = Object.entries(e.items).map(([id,q])=>`${q}x ${menu.find(m=>m.id===id)?.name||id}`).join('; ');
+      rows.push([e.id, e.date, time, e.revenue, e.notes||'', items]);
+    });
+    const csv  = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`lota-sales-${todayStr}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported!');
+  };
+
+  // #10 — Share day summary
+  const shareSummary = () => {
+    const dateStr  = new Date(todayStr+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const topItems = sortedSummary.slice(0,3).map(({item,qty})=>`${item.name} x${qty}`).join(', ');
+    const text     = `${dateStr} · ₱${todaySales.toLocaleString()} · ${todayTotalItems} items sold${topItems ? ` · Top: ${topItems}` : ''}`;
+    if (navigator.share) {
+      navigator.share({text}).catch(()=>{});
+    } else {
+      navigator.clipboard?.writeText(text)
+        .then(()=>showToast('Copied to clipboard!'))
+        .catch(()=>showToast('Could not copy'));
+    }
+  };
+
+  // #11 — Import CSV
+  const importCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const lines = ev.target.result.split('\n').filter(l=>l.trim());
+        const header = lines[0].toLowerCase();
+        const hasIdCol = header.startsWith('"id"') || header.startsWith('id,') || header.startsWith('id"');
+        const rows = lines.slice(1);
+        const existingIds = new Set(entries.map(e=>e.id));
+        const newEntries = [];
+
+        rows.forEach(row => {
+          // Simple quoted-CSV parser
+          const cols = [];
+          let cur = '', inQ = false;
+          for (const ch of row) {
+            if (ch==='"') { inQ=!inQ; }
+            else if (ch===',' && !inQ) { cols.push(cur); cur=''; }
+            else { cur+=ch; }
+          }
+          cols.push(cur);
+
+          let id, date, revenue, notes, itemsStr;
+          if (hasIdCol) {
+            [id, date, , revenue, notes, itemsStr] = cols;
+          } else {
+            [date, , revenue, notes, itemsStr] = cols;
+            id = null;
+          }
+          date = (date||'').trim();
+          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+
+          const entryId = (id && id.trim())
+            ? id.trim()
+            : String(new Date(date+'T12:00:00').getTime() + Math.round(Math.random()*9999));
+          if (existingIds.has(entryId)) return;
+
+          const items = {};
+          if (itemsStr) {
+            itemsStr.split(';').forEach(s => {
+              const m = s.trim().match(/^(\d+)x\s+(.+)$/);
+              if (m) {
+                const mi = menu.find(x=>x.name===m[2].trim());
+                if (mi) items[mi.id] = parseInt(m[1]);
+              }
+            });
+          }
+          newEntries.push({id:entryId, date, items, revenue:parseFloat(revenue)||0, notes:(notes||'').trim()});
+        });
+
+        if (newEntries.length > 0) {
+          setEntries(prev=>[...prev,...newEntries].sort((a,b)=>b.date.localeCompare(a.date)));
+          showToast(`${newEntries.length} entr${newEntries.length===1?'y':'ies'} imported!`);
+        } else {
+          showToast('Nothing new to import.');
+        }
+      } catch(err) {
+        showToast('Import failed — check CSV format.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // Items visible in Quick Entry — search overrides category filter
+  const visibleItems = itemSearch.trim()
+    ? menu.filter(m => m.name.toLowerCase().includes(itemSearch.trim().toLowerCase()))
+    : activeCategory === '★ Faves'
+      ? topSellers
+      : menu.filter(m => m.category === activeCategory);
+
+  // ── RENDER ───────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col bg-paper min-h-screen">
+
+      {/* ── SPLASH + LOGIN ──────────────────────────────────────────────────── */}
+      {splashVisible && (
+        <div className="fixed inset-0 z-50 flex flex-col"
+          style={{
+            backgroundColor: '#e0d9cb',
+            transition: 'opacity 0.6s ease',
+            opacity: splashFading ? 0 : 1,
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          }}>
+
+          {/* Logo */}
+          <div className="flex items-center justify-center" style={{flex:'0 0 52%'}}>
+            <img
+              src="./helmet%20launching%2002.png"
+              alt="Lota Kopi"
+              className={splashImgReady ? 'splash-stamp' : ''}
+              onLoad={() => setSplashImgReady(true)}
+              style={{width:'78%', maxWidth:'300px', userSelect:'none', pointerEvents:'none', opacity: splashImgReady ? undefined : 0}}
+            />
+          </div>
+
+          {/* PIN section — fades in after image loads */}
+          {splashImgReady && (
+            <div className="flex flex-col items-center justify-start px-8 pin-fade-in" style={{flex:'1'}}>
+              <p className="text-[10px] uppercase tracking-[0.2em] mb-5" style={{color:'#8d6852'}}>
+                {pinMode === 'setup' ? 'Create a PIN' : pinMode === 'confirm' ? 'Confirm PIN' : 'Enter PIN'}
+              </p>
+
+              {/* PIN dots */}
+              <div className={`flex gap-5 mb-7 ${pinError ? 'pin-shake' : ''}`}>
+                {[0,1,2,3].map(i => (
+                  <div key={i} style={{
+                    width:14, height:14, borderRadius:'50%',
+                    border: `2px solid ${pinError ? '#c0715a' : '#ae7556'}`,
+                    backgroundColor: pinInput.length > i ? (pinError ? '#c0715a' : '#ae7556') : 'transparent',
+                    transition: 'background-color 0.1s ease',
+                  }}/>
+                ))}
+              </div>
+
+              {/* Number pad */}
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', width:'100%', maxWidth:'260px'}}>
+                {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i) => (
+                  k === '' ? <div key={i}/> :
+                  <button key={i} onClick={() => handlePinKey(k)}
+                    style={{
+                      padding:'14px 0', borderRadius:14, fontSize:20, fontWeight:500,
+                      backgroundColor:'rgba(174,117,86,0.12)',
+                      color:'#584c3a', border:'none', cursor:'pointer',
+                    }}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── HERO HEADER ─────────────────────────────────────────────────────── */}
+      <div className="text-white relative overflow-hidden shrink-0" style={{backgroundColor:'var(--color-lota)'}}>
+        <div className="absolute top-0 right-0 p-3 opacity-[0.07]"><BarChart2 size={160}/></div>
+        <div className="px-5 pb-5 relative z-10" style={{paddingTop:'calc(env(safe-area-inset-top, 0px) + 18px)'}}>
+          <div className="flex justify-between items-start mb-5">
+            <div>
+              <h1 className="font-serif text-xl italic tracking-wide">Sales Tracker</h1>
+              <p className="text-[10px] uppercase tracking-[0.25em] opacity-60 mt-0.5">Lota Kopi Dashboard</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setDarkMode(v => !v)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors opacity-80">
+                {darkMode ? <SunIco size={15}/> : <MoonIco size={15}/>}
+              </button>
+              <button onClick={() => setIsEditingMenu(v => !v)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                {isEditingMenu ? <XIco size={16}/> : <Settings size={16}/>}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-55 mb-1">Today's Sales</p>
+              <p className="text-3xl font-serif leading-none">₱{todaySales.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-55 mb-1">This Month</p>
+              <p className="text-3xl font-serif leading-none">₱{monthSales.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {/* Daily target progress bar */}
+          {dailyTarget > 0 && (() => {
+            const pct  = Math.min(100, Math.round((todaySales / dailyTarget) * 100));
+            const done = todaySales >= dailyTarget;
+            return (
+              <div className="mt-4">
+                <div className="flex justify-between text-[9px] opacity-75 mb-1.5">
+                  <span>{done ? '🎉 Goal reached!' : `₱${(dailyTarget-todaySales).toLocaleString()} to go`}</span>
+                  <span>Target ₱{dailyTarget.toLocaleString()} · {pct}%</span>
+                </div>
+                <div className="h-1.5 bg-white/25 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{width:`${pct}%`, backgroundColor: done ? 'var(--color-gold)' : 'white'}}/>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* ── TAB BAR — #9 badge on Summary ───────────────────────────────────── */}
+      {!isEditingMenu && (
+        <div className="flex border-b border-paper-3 bg-paper sticky top-0 z-20 shadow-sm shrink-0">
+          {[['entry','Quick Entry'],['summary','Summary'],['history','History']].map(([v,label]) => (
+            <button key={v} onClick={() => setView(v)}
+              className={`flex-1 py-3 text-[10px] uppercase tracking-widest font-bold transition-colors ${view===v?'text-lota':'text-ink-3 hover:text-ink-2'}`}
+              style={{borderBottom: view===v ? '2px solid var(--color-lota)' : '2px solid transparent'}}>
+              <span className="inline-flex items-center justify-center gap-1">
+                {label}
+                {v==='summary' && todayTotalItems>0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[8px] font-bold text-white leading-none"
+                    style={{backgroundColor:'var(--color-lota)'}}>
+                    {todayTotalItems>99?'99+':todayTotalItems}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── CONTENT AREA ────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-4" style={{paddingBottom:'160px'}}>
+
+        {/* ─ SETTINGS ─ */}
+        {isEditingMenu && (
+          <div className="space-y-4 fade-in">
+            <p className="text-[10px] uppercase tracking-widest text-ink-3 text-center">Menu & Settings</p>
+
+            {/* Daily target */}
+            <div className="bg-paper-2 p-4 rounded-xl border border-paper-3">
+              <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-2">Daily Sales Target</p>
+              <div className="flex gap-2 items-center">
+                <span className="text-sm text-ink-3 shrink-0 font-serif">₱</span>
+                <input type="number" placeholder="0 = no target"
+                  value={dailyTarget || ''}
+                  onChange={e => setDailyTarget(parseInt(e.target.value) || 0)}
+                  className="flex-1 bg-white border border-paper-3 px-3 py-2 rounded-lg text-sm outline-none focus:border-ink transition-colors"/>
+                {dailyTarget > 0 && (
+                  <button onClick={() => setDailyTarget(0)} className="text-ink-3 hover:text-red-400 p-1 transition-colors">
+                    <XIco size={14}/>
+                  </button>
+                )}
+              </div>
+              {dailyTarget > 0 && (
+                <p className="text-[9px] text-ink-3 mt-1.5">Progress bar appears in the header.</p>
+              )}
+            </div>
+
+            {/* Export + Import — #11 */}
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={exportCSV}
+                className="flex items-center justify-center gap-1.5 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-2 hover:bg-paper-2 active:bg-paper-3 transition-colors">
+                <Download size={13}/>Export CSV
+              </button>
+              <button onClick={() => importRef.current?.click()}
+                className="flex items-center justify-center gap-1.5 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-2 hover:bg-paper-2 active:bg-paper-3 transition-colors">
+                <Upload size={13}/>Import CSV
+              </button>
+              <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={importCSV}/>
+            </div>
+
+            {/* Reset menu */}
+            <button onClick={() => { if(confirm('Reset menu to defaults? Custom items will be lost.')) { setMenu(DEFAULT_MENU); showToast('Menu reset.'); }}}
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-3 hover:bg-paper-2 active:bg-paper-3 transition-colors">
+              <RotateCcw size={14}/>Reset to Default Menu
+            </button>
+
+            {/* Add new item */}
+            <div className="bg-paper-2 p-4 rounded-xl border border-paper-3">
+              <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-3">Add New Item</p>
+              <div className="space-y-2">
+                <input placeholder="Item name" value={newItem.name}
+                  onChange={e=>setNewItem({...newItem, name:e.target.value})}
+                  className="w-full bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink transition-colors"/>
+                <div className="flex gap-2">
+                  <input type="number" placeholder="₱ Price" value={newItem.price}
+                    onChange={e=>setNewItem({...newItem, price:e.target.value})}
+                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink"/>
+                  <select value={newItem.category}
+                    onChange={e=>setNewItem({...newItem, category:e.target.value})}
+                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none">
+                    {cats.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <button onClick={() => {
+                  if (!newItem.name || !newItem.price) return;
+                  setMenu(m=>[...m,{id:Date.now().toString(),name:newItem.name,price:parseFloat(newItem.price),category:newItem.category}]);
+                  setNewItem({...newItem, name:'', price:''});
+                  showToast('Item added!');
+                }} className="w-full py-2.5 bg-ink text-paper rounded-lg text-xs uppercase tracking-widest font-bold hover:bg-ink-2 active:opacity-80 transition-colors">
+                  Add to Menu
+                </button>
+              </div>
+            </div>
+
+            {/* Menu list — sold-out toggle + #8 monthly stats */}
+            {cats.map(cat => (
+              <div key={cat}>
+                <h4 className="text-[10px] uppercase tracking-widest text-ink-3 mb-2 px-1">{cat}</h4>
+                {menu.filter(m=>m.category===cat).map(item => {
+                  const stats = itemMonthStats[item.id];
+                  return (
+                    <div key={item.id}
+                      className={`flex justify-between items-center p-3 bg-white rounded-lg border border-paper-3 mb-1 transition-opacity ${isSoldOut(item.id)?'opacity-50':''}`}>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-sm text-ink">{item.name}</span>
+                        {isSoldOut(item.id) && (
+                          <span className="ml-2 text-[9px] uppercase tracking-widest text-red-400 font-bold">Sold Out</span>
+                        )}
+                        {stats && stats.qty > 0 && (
+                          <p className="text-[9px] text-ink-3 mt-0.5">{stats.qty}× this month · ₱{stats.revenue.toLocaleString()}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => toggleSoldOut(item.id)}
+                          title={isSoldOut(item.id) ? 'Mark available' : 'Mark sold out today'}
+                          className={`p-1.5 rounded-lg transition-colors ${isSoldOut(item.id) ? 'text-red-400 bg-red-50' : 'text-ink-3 hover:text-red-400'}`}>
+                          <Ban size={12}/>
+                        </button>
+                        {editPriceId===item.id ? (
+                          <div className="flex gap-1 items-center">
+                            <input type="number" value={editPriceVal}
+                              onChange={e=>setEditPriceVal(e.target.value)}
+                              className="w-14 bg-paper-2 border border-paper-3 px-1 py-0.5 text-sm rounded text-center" autoFocus/>
+                            <button onClick={() => {
+                              setMenu(m=>m.map(x=>x.id===item.id?{...x,price:parseFloat(editPriceVal)||x.price}:x));
+                              setEditPriceId(null);
+                            }} className="text-lota p-1"><Check size={12}/></button>
+                            <button onClick={() => setEditPriceId(null)} className="text-ink-3 p-1"><XIco size={12}/></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setEditPriceId(item.id); setEditPriceVal(item.price.toString()); }}
+                            className="text-sm font-serif italic text-ink-3 hover:text-lota px-2 transition-colors">
+                            ₱{item.price}
+                          </button>
+                        )}
+                        <button onClick={() => setMenu(m=>m.filter(x=>x.id!==item.id))}
+                          className="text-ink-3 hover:text-red-500 active:text-red-600 p-1 transition-colors">
+                          <Trash2 size={12}/>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ─ QUICK ENTRY ─ */}
+        {!isEditingMenu && view==='entry' && (
+          <div className="space-y-4 fade-in">
+
+            {/* Yesterday close card */}
+            {yesterdayEntries.length > 0 && todayEntries.length === 0 && !dismissedYestCard && (
+              <div className="bg-white rounded-xl border border-paper-3 px-4 py-3 relative fade-in">
+                <button onClick={() => setDismissedYestCard(true)}
+                  className="absolute top-2 right-2 p-1 text-ink-3 hover:text-ink transition-colors">
+                  <XIco size={12}/>
+                </button>
+                <p className="text-[9px] uppercase tracking-widest text-ink-3 mb-2">Yesterday · {new Date(yesterdayStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
+                <div className="flex justify-between items-baseline">
+                  <p className="text-2xl font-serif" style={{color:'var(--color-ink)'}}>₱{yesterdayTotal.toLocaleString()}</p>
+                  {dailyTarget > 0 && (
+                    <p className="text-[10px] font-medium" style={{color: yesterdayTotal >= dailyTarget ? '#6a9e6a' : '#b56a5a'}}>
+                      {yesterdayTotal >= dailyTarget ? '✓ Target hit' : `₱${(dailyTarget-yesterdayTotal).toLocaleString()} short`}
+                    </p>
+                  )}
+                </div>
+                {topYestItem && (
+                  <p className="text-[10px] text-ink-3 mt-1">Top item: {topYestItem.name} ×{topYestEntry[1]}</p>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between bg-paper-2 p-3 rounded-xl border border-paper-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-lota"/>
+                <span className="text-xs uppercase tracking-wider text-ink-2">Date</span>
+              </div>
+              <input type="date" value={entryDate} onChange={e=>setEntryDate(e.target.value)}
+                className="bg-transparent text-xs font-bold text-ink outline-none cursor-pointer"/>
+            </div>
+
+            {/* Search bar */}
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
+                <SearchIco size={14}/>
+              </span>
+              <input type="text" placeholder="Search items…"
+                value={itemSearch} onChange={e => setItemSearch(e.target.value)}
+                className="w-full bg-white border border-paper-3 pl-9 pr-8 py-2.5 rounded-xl text-sm outline-none focus:border-ink-3 transition-colors text-ink"/>
+              {itemSearch && (
+                <button onClick={() => setItemSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors">
+                  <XIco size={13}/>
+                </button>
+              )}
+            </div>
+
+            {/* Repeat last sale */}
+            {!itemSearch && Object.keys(quantities).length === 0 && entries.length > 0 && (() => {
+              const last = entries[0];
+              const lastDate = last.date === todayStr ? 'Today' :
+                last.date === (() => { const d = new Date(todayStr+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })()
+                ? 'Yesterday'
+                : new Date(last.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+              return (
+                <button onClick={() => {
+                  const filled = {};
+                  Object.entries(last.items).forEach(([id,qty]) => {
+                    if (menu.find(m => m.id === id)) filled[id] = qty;
+                  });
+                  setQuantities(filled);
+                  showToast('Last sale loaded');
+                }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-white rounded-xl border border-paper-3 hover:border-lota/40 active:bg-paper-2 transition-all">
+                  <div className="flex items-center gap-2.5">
+                    <RotateCcw size={13} className="text-lota shrink-0"/>
+                    <span className="text-xs text-ink-2">Repeat last sale</span>
+                  </div>
+                  <span className="text-[10px] text-ink-3">{lastDate} · ₱{last.revenue.toLocaleString()}</span>
+                </button>
+              );
+            })()}
+
+            {/* Category pills — ★ Faves first (hidden when searching) */}
+            {!itemSearch && <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {allCats.map(cat => {
+                const isFaves = cat === '★ Faves';
+                const isActive = activeCategory === cat;
+                return (
+                  <button key={cat} onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest whitespace-nowrap transition-all shrink-0 font-bold
+                      ${isActive ? 'text-white' : 'bg-paper-2 text-ink-3 border border-paper-3'}`}
+                    style={isActive ? {backgroundColor: isFaves ? 'var(--color-gold)' : 'var(--color-lota)'} : {}}>
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>}
+
+            {!itemSearch && activeCategory === '★ Faves' && topSellers.length === 0 && (
+              <p className="text-center text-ink-3 text-xs italic py-8">
+                Log a few sales and your top sellers will appear here.
+              </p>
+            )}
+
+            {itemSearch && visibleItems.length === 0 && (
+              <p className="text-center text-ink-3 text-xs italic py-8">No items match "{itemSearch}"</p>
+            )}
+
+            <div className="grid grid-cols-1 gap-2">
+              {visibleItems.map(item => {
+                const soldOut = isSoldOut(item.id);
+                return (
+                  <div key={item.id}
+                    className={`flex items-center justify-between p-3 bg-white rounded-xl border transition-all
+                      ${soldOut ? 'opacity-50 border-paper-3' : quantities[item.id] ? 'border-lota/40 shadow-sm' : 'border-paper-3'}`}>
+                    <div>
+                      <p className={`text-sm font-bold ${soldOut ? 'text-ink-3 line-through' : 'text-ink'}`}>{item.name}</p>
+                      <p className="text-[11px] text-ink-3 font-serif italic">₱{item.price}</p>
+                    </div>
+                    {soldOut ? (
+                      <span className="text-[9px] uppercase tracking-widest text-red-300 font-bold border border-red-200 px-2 py-1 rounded-full">
+                        Sold Out
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <button onClick={() => handleQty(item.id,-1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
+                          <Minus size={12}/>
+                        </button>
+                        <span className={`text-sm font-bold w-5 text-center tabular-nums ${quantities[item.id]?'text-lota':'text-ink-3'}`}>
+                          {quantities[item.id]||0}
+                        </span>
+                        <button onClick={() => handleQty(item.id,1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
+                          <Plus size={12}/>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ─ TODAY'S SUMMARY ─ */}
+        {!isEditingMenu && view==='summary' && (
+          <div className="space-y-4 fade-in">
+            <div className="bg-white rounded-2xl border border-paper-3 overflow-hidden">
+              <div className="bg-paper-2 px-4 py-3 border-b border-paper-3 flex justify-between items-center">
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-ink-2">Today's Breakdown</h3>
+                <span className="text-[10px] text-ink-3">
+                  {new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+                </span>
+              </div>
+              {sortedSummary.length===0 ? (
+                <div className="p-10 text-center text-ink-3 italic text-sm">No sales logged today yet.</div>
+              ) : (
+                <div className="divide-y divide-paper-3">
+                  {sortedSummary.map(({item,qty,total}) => (
+                    <div key={item.id} className="px-4 py-3 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                          style={{backgroundColor:'var(--color-lota)'}}>{qty}</div>
+                        <div>
+                          <p className="text-sm font-medium text-ink">{item.name}</p>
+                          <p className="text-[10px] text-ink-3 uppercase tracking-wide">{item.category}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-serif text-ink-2">₱{total.toLocaleString()}</p>
+                    </div>
+                  ))}
+                  <div className="px-4 py-3 bg-paper-2 flex justify-between items-center font-bold">
+                    <span className="text-[10px] uppercase tracking-widest text-ink-2">Total Today</span>
+                    <span className="text-lg font-serif" style={{color:'var(--color-lota)'}}>₱{todaySales.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* #10 — Share day summary */}
+            {todaySales > 0 && (
+              <button onClick={shareSummary}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-2 hover:bg-paper-2 active:bg-paper-3 transition-colors">
+                <Share size={13}/>Share Day Summary
+              </button>
+            )}
+
+            {/* Field Note of the Day */}
+            <div className="bg-white rounded-2xl border border-paper-3 overflow-hidden">
+              <div className="px-4 pt-4 pb-3 border-b border-paper-3 flex justify-between items-center"
+                style={{backgroundColor:'var(--color-lota-3)'}}>
+                <div className="flex items-center gap-2">
+                  <PenIco size={13} className="text-lota"/>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-ink-2">Field Note</span>
+                </div>
+                <span className="text-[9px] text-ink-3">
+                  {new Date(todayStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}
+                </span>
+              </div>
+              <div className="p-4">
+                <textarea
+                  value={todayNote}
+                  onChange={e => setFieldNotes(prev => ({...prev, [todayStr]: e.target.value}))}
+                  placeholder={"How was today? Sales vibe, what sold out, weather, any observations…"}
+                  rows={4}
+                  style={{
+                    width:'100%', background:'transparent', border:'none', outline:'none',
+                    resize:'none', fontSize:13, lineHeight:'1.7', color:'var(--color-ink)',
+                    fontFamily:'inherit',
+                  }}
+                />
+                <p className="text-[9px] text-ink-3 text-right mt-1" style={{minHeight:'13px'}}>
+                  {todayNote.length > 0 ? `${todayNote.length} chars · auto-saved` : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Entry log */}
+            {todayEntries.length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-2 px-1">Entry Log</p>
+                {todayEntries.slice().reverse().map(entry => (
+                  <div key={entry.id} className="bg-white rounded-xl border border-paper-3 p-4 mb-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="text-[10px] text-ink-3">
+                          {new Date(parseInt(entry.id)).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                        </p>
+                        <p className="text-xl font-serif text-ink">₱{entry.revenue.toLocaleString()}</p>
+                      </div>
+                      <button
+                        onClick={() => { if(confirm('Delete this entry?')) setEntries(p=>p.filter(e=>e.id!==entry.id)); }}
+                        className="p-2 text-ink-3 hover:text-red-500 active:text-red-600 transition-colors">
+                        <Trash2 size={14}/>
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(entry.items).map(([id,q]) => {
+                        const it = menu.find(m=>m.id===id);
+                        return <span key={id} className="px-2 py-0.5 bg-paper-2 rounded-full text-[10px] text-ink-2">{q}× {it?.name}</span>;
+                      })}
+                    </div>
+                    {entry.notes && (
+                      <p className="text-[10px] text-ink-3 italic mt-2">"{entry.notes}"</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─ HISTORY ─ */}
+        {!isEditingMenu && view==='history' && (
+          <HistoryView entries={entries} menu={menu} setEntries={setEntries} fieldNotes={fieldNotes} setFieldNotes={setFieldNotes}/>
+        )}
+      </div>
+
+      {/* ── STICKY SAVE BAR ─────────────────────────────────────────────────── */}
+      {Object.keys(quantities).length > 0 && view==='entry' && !isEditingMenu && (
+        <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-paper-3 px-4 pt-3 z-30 shadow-xl slide-up"
+          style={{paddingBottom:'max(16px, env(safe-area-inset-bottom, 16px))'}}>
+          <div className="flex justify-between items-center mb-2.5">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-0.5">Running Total</p>
+              <p className="font-serif text-2xl text-ink">₱{calcRevenue.toLocaleString()}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-0.5">Items</p>
+                <p className="font-serif text-2xl text-ink">{totalItems}</p>
+              </div>
+              <button onClick={() => setQuantities({})}
+                className="text-[10px] uppercase tracking-widest text-ink-3 hover:text-red-400 active:text-red-500 transition-colors border-b border-ink-3/30 pb-px">
+                Clear
+              </button>
+            </div>
+          </div>
+          <input type="text" placeholder="Add a note… rainy day, out of cold brew, etc."
+            value={entryNote}
+            onChange={e => setEntryNote(e.target.value)}
+            className="w-full bg-paper-2 border border-paper-3 px-3 py-2 rounded-lg text-xs outline-none focus:border-ink mb-2.5 text-ink placeholder:text-ink-3 transition-colors"/>
+          <button onClick={saveEntry}
+            className="w-full py-3 text-white rounded-xl text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-90 active:opacity-75"
+            style={{backgroundColor:'var(--color-lota)'}}>
+            Save Entry
+          </button>
+        </div>
+      )}
+
+      {/* ── TOAST ───────────────────────────────────────────────────────────── */}
+      {toast && (
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-ink text-paper px-5 py-2.5 rounded-full text-xs font-medium shadow-xl tracking-wide fade-in whitespace-nowrap">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── APP SHELL ────────────────────────────────────────────────────────────────
+function App() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  }, []);
+  return <SalesTracker/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

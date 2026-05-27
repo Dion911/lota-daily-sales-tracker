@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable icon: safe zone is inner 80% circle, so we pad the background to bleed edge -->
+  <rect width="512" height="512" fill="#c4722a"/>
+  <!-- Subtle bar chart graphic (decorative, low opacity) -->
+  <rect x="60" y="320" width="50" height="100" fill="white" opacity="0.08"/>
+  <rect x="130" y="260" width="50" height="160" fill="white" opacity="0.08"/>
+  <rect x="200" y="290" width="50" height="130" fill="white" opacity="0.08"/>
+  <!-- Large italic L, centered in safe zone -->
+  <text x="256" y="390" text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="320" font-style="italic"
+    fill="white" opacity="0.95">L</text>
+</svg>

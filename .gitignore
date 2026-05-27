@@ -1,0 +1,12 @@
+# Dev-only — not needed for the hosted PWA
+server.js
+serve.py
+CLAUDE.md
+design.md
+dione-os-v5-worlds.html
+finance-tracker.html
+lota-sales-tracker.html
+Downloads/
+
+# macOS
+.DS_Store
