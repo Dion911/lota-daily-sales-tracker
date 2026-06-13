@@ -1,4 +1,4 @@
-const CACHE = 'lota-sales-v10';
+const CACHE = 'lota-sales-v12';
 
 // Files to pre-cache on install
 const PRECACHE = [

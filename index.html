@@ -891,14 +891,14 @@ function SalesTracker() {
           }}>
 
           {/* Logo — decorative, does not gate PIN */}
-          <div className="flex items-center justify-center" style={{flex:'0 0 auto', paddingTop:'3vh', paddingBottom:'2vh'}}>
+          <div className="flex items-center justify-center" style={{flex:'0 0 auto', width:'100%', paddingTop:'3vh', paddingBottom:'2vh'}}>
             <img
               src="./helmet%20launching%2002.png"
               alt="Lota Kopi"
               className={splashImgReady ? 'splash-stamp' : ''}
               onLoad={() => setSplashImgReady(true)}
               onError={() => setSplashImgReady(true)}
-              style={{width:'73%', maxWidth:'280px', maxHeight:'45vh', objectFit:'contain',
+              style={{width:'280px', height:'280px', objectFit:'contain',
                 userSelect:'none', pointerEvents:'none',
                 opacity: splashImgReady ? 1 : 0, transition:'opacity 0.3s ease'}}
             />
@@ -1067,13 +1067,15 @@ function SalesTracker() {
                 <input placeholder="Item name" value={newItem.name}
                   onChange={e=>setNewItem({...newItem, name:e.target.value})}
                   className="w-full bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink transition-colors"/>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-stretch">
                   <input type="number" placeholder="₱ Price" value={newItem.price}
                     onChange={e=>setNewItem({...newItem, price:e.target.value})}
-                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink"/>
+                    className="flex-1 bg-white border border-paper-3 px-3 rounded-lg text-sm outline-none focus:border-ink"
+                    style={{height:'42px'}}/>
                   <select value={newItem.category}
                     onChange={e=>setNewItem({...newItem, category:e.target.value})}
-                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none">
+                    className="flex-1 bg-white border border-paper-3 px-3 rounded-lg text-sm outline-none"
+                    style={{height:'42px'}}>
                     {cats.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
