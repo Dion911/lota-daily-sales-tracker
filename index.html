@@ -670,6 +670,13 @@ function SalesTracker() {
     const today = new Date().toISOString().split('T')[0];
     localStorage.setItem('lota_soldout_v1', JSON.stringify({ date: today, ids: soldOutIds }));
   }, [soldOutIds]);
+  // Fallback: if image never loads/errors, show PIN after 3s anyway
+  useEffect(() => {
+    if (splashVisible && !splashImgReady) {
+      const t = setTimeout(() => setSplashImgReady(true), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [splashVisible, splashImgReady]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -874,7 +881,7 @@ function SalesTracker() {
 
       {/* ── SPLASH + LOGIN ──────────────────────────────────────────────────── */}
       {splashVisible && (
-        <div className="fixed inset-0 z-50 flex flex-col"
+        <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
           style={{
             backgroundColor: '#e0d9cb',
             transition: 'opacity 0.6s ease',
@@ -883,29 +890,31 @@ function SalesTracker() {
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}>
 
-          {/* Logo */}
-          <div className="flex items-center justify-center" style={{flex:'0 0 52%'}}>
+          {/* Logo — decorative, does not gate PIN */}
+          <div className="flex items-center justify-center" style={{flex:'0 0 auto', paddingTop:'3vh', paddingBottom:'2vh'}}>
             <img
               src="./helmet%20launching%2002.png"
               alt="Lota Kopi"
               className={splashImgReady ? 'splash-stamp' : ''}
               onLoad={() => setSplashImgReady(true)}
-              style={{width:'78%', maxWidth:'300px', userSelect:'none', pointerEvents:'none', opacity: splashImgReady ? undefined : 0}}
+              onError={() => setSplashImgReady(true)}
+              style={{width:'52%', maxWidth:'200px', maxHeight:'32vh', objectFit:'contain',
+                userSelect:'none', pointerEvents:'none',
+                opacity: splashImgReady ? 1 : 0, transition:'opacity 0.3s ease'}}
             />
           </div>
 
-          {/* PIN section — fades in after image loads */}
-          {splashImgReady && (
-            <div className="flex flex-col items-center justify-start px-8 pin-fade-in" style={{flex:'1'}}>
-              <p className="text-[10px] uppercase tracking-[0.2em] mb-5" style={{color:'#8d6852'}}>
+          {/* PIN section — always visible */}
+          <div className="flex flex-col items-center justify-start px-8 pin-fade-in" style={{flex:'1', paddingBottom:'max(3vh, env(safe-area-inset-bottom, 16px))'}}>
+              <p className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{color:'#8d6852'}}>
                 {pinMode === 'setup' ? 'Create a PIN' : pinMode === 'confirm' ? 'Confirm PIN' : 'Enter PIN'}
               </p>
 
               {/* PIN dots */}
-              <div className={`flex gap-5 mb-7 ${pinError ? 'pin-shake' : ''}`}>
+              <div className={`flex gap-5 mb-5 ${pinError ? 'pin-shake' : ''}`}>
                 {[0,1,2,3].map(i => (
                   <div key={i} style={{
-                    width:14, height:14, borderRadius:'50%',
+                    width:13, height:13, borderRadius:'50%',
                     border: `2px solid ${pinError ? '#c0715a' : '#ae7556'}`,
                     backgroundColor: pinInput.length > i ? (pinError ? '#c0715a' : '#ae7556') : 'transparent',
                     transition: 'background-color 0.1s ease',
@@ -914,12 +923,12 @@ function SalesTracker() {
               </div>
 
               {/* Number pad */}
-              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', width:'100%', maxWidth:'260px'}}>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', width:'100%', maxWidth:'260px'}}>
                 {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i) => (
                   k === '' ? <div key={i}/> :
                   <button key={i} onClick={() => handlePinKey(k)}
                     style={{
-                      padding:'14px 0', borderRadius:14, fontSize:20, fontWeight:500,
+                      padding:'11px 0', borderRadius:12, fontSize:20, fontWeight:500,
                       backgroundColor:'rgba(174,117,86,0.12)',
                       color:'#584c3a', border:'none', cursor:'pointer',
                     }}>
@@ -928,7 +937,6 @@ function SalesTracker() {
                 ))}
               </div>
             </div>
-          )}
         </div>
       )}
 
