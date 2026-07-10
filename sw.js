@@ -1,4 +1,4 @@
-const CACHE = 'lota-sales-v10';
+const CACHE = 'lota-sales-v13';
 
 // Files to pre-cache on install
 const PRECACHE = [
@@ -28,7 +28,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const isCDN  = !url.origin.includes(self.location.hostname);
-  const isHTML = url.pathname.endsWith('.html') || url.pathname === '/';
+  // Any page navigation counts as HTML — covers subpath deploys like
+  // GitHub Pages (/lota-sales-tracker/) where pathname is neither '/' nor *.html.
+  const isHTML = e.request.mode === 'navigate' || url.pathname.endsWith('.html');
 
   // Network-first for HTML + CDN — always get the latest app code
   if (isCDN || isHTML) {

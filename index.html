@@ -230,9 +230,14 @@ html.dark svg rect[fill="#e2dcd0"] { fill: var(--color-paper-3); }
 <div id="root"></div>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useRef } = React;
+
+// Local-timezone date string (YYYY-MM-DD) — never use toISOString for dates:
+// it returns UTC, which is yesterday's date before 8 AM in the Philippines.
+const localDateStr = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
 function Ico({ d, size=16, className='', strokeWidth=1.5, fill='none' }) {
@@ -317,7 +322,7 @@ const DEFAULT_MENU = [
 // ─── HISTORY VIEW ─────────────────────────────────────────────────────────────
 function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
   const [expanded, setExpanded] = useState(null);
-  const todayStr     = new Date().toISOString().split('T')[0];
+  const todayStr     = localDateStr();
   const currentMonth = todayStr.slice(0, 7);
 
   const grouped = entries.reduce((acc, e) => {
@@ -340,7 +345,7 @@ function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
   const last7Days = Array.from({length: 7}, (_, i) => {
     const d = new Date(todayStr + 'T00:00:00');
     d.setDate(d.getDate() - (6 - i));
-    const dayStr = d.toISOString().split('T')[0];
+    const dayStr = localDateStr(d);
     const rev = (grouped[dayStr] || []).reduce((s, e) => s + e.revenue, 0);
     const label = d.toLocaleDateString('en-US', {weekday:'short'}).slice(0, 2);
     return { dayStr, rev, label };
@@ -573,6 +578,88 @@ function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
   );
 }
 
+// ─── PIN SETTINGS ─────────────────────────────────────────────────────────────
+// Change or remove the app PIN. Changing/removing always verifies the current
+// PIN first. (Forgot-PIN recovery lives on the splash — it clears the PIN
+// without touching sales data.)
+function PinSettings({ showToast }) {
+  const [step, setStep] = useState('idle');   // idle | current | new | confirm | remove
+  const [next1, setNext1] = useState('');
+  const [val, setVal] = useState('');
+  const [err, setErr] = useState('');
+  const hasPin = !!localStorage.getItem('lota_pin');
+
+  const reset = () => { setStep('idle'); setNext1(''); setVal(''); setErr(''); };
+  const startChange = () => { setErr(''); setVal(''); setStep(hasPin ? 'current' : 'new'); };
+  const startRemove = () => { setErr(''); setVal(''); setStep('remove'); };
+
+  const label =
+    step === 'current' ? 'Enter current PIN'
+    : step === 'new'    ? 'Enter new PIN'
+    : step === 'confirm'? 'Confirm new PIN'
+    : step === 'remove' ? 'Enter current PIN to remove'
+    : '';
+
+  const submit = () => {
+    if (val.length !== 4) { setErr('Enter 4 digits'); return; }
+    if (step === 'current') {
+      if (val !== localStorage.getItem('lota_pin')) { setErr('Incorrect PIN'); setVal(''); return; }
+      setStep('new'); setVal(''); setErr('');
+    } else if (step === 'new') {
+      setNext1(val); setStep('confirm'); setVal(''); setErr('');
+    } else if (step === 'confirm') {
+      if (val !== next1) { setErr('PINs don’t match'); setStep('new'); setNext1(''); setVal(''); return; }
+      localStorage.setItem('lota_pin', val);
+      showToast('PIN updated'); reset();
+    } else if (step === 'remove') {
+      if (val !== localStorage.getItem('lota_pin')) { setErr('Incorrect PIN'); setVal(''); return; }
+      localStorage.removeItem('lota_pin');
+      showToast('PIN removed'); reset();
+    }
+  };
+
+  return (
+    <div className="bg-paper-2 p-4 rounded-xl border border-paper-3">
+      <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-3">Security · PIN</p>
+      {step === 'idle' ? (
+        <div className="flex gap-2">
+          <button onClick={startChange}
+            className="flex-1 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-2 bg-white hover:bg-paper active:bg-paper-3 transition-colors">
+            {hasPin ? 'Change PIN' : 'Set PIN'}
+          </button>
+          {hasPin && (
+            <button onClick={startRemove}
+              className="flex-1 py-2.5 border border-paper-3 rounded-xl text-xs uppercase tracking-widest text-ink-3 hover:bg-paper active:bg-paper-3 transition-colors">
+              Remove PIN
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-[11px] text-ink-2">{label}</p>
+          <input type="password" inputMode="numeric" pattern="[0-9]*" maxLength={4} autoFocus
+            value={val}
+            onChange={e => { setVal(e.target.value.replace(/\D/g,'').slice(0,4)); setErr(''); }}
+            onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+            className="w-full bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-lg tracking-[0.5em] text-center outline-none focus:border-ink transition-colors"/>
+          {err && <p className="text-[11px]" style={{color:'#b56a5a'}}>{err}</p>}
+          <div className="flex gap-2">
+            <button onClick={submit}
+              className="flex-1 py-2.5 rounded-lg text-xs uppercase tracking-widest font-bold text-white transition-opacity hover:opacity-90 active:opacity-75"
+              style={{backgroundColor:'var(--color-lota)'}}>
+              {step === 'confirm' ? 'Save PIN' : step === 'remove' ? 'Remove' : 'Next'}
+            </button>
+            <button onClick={reset}
+              className="px-4 py-2.5 rounded-lg text-xs uppercase tracking-widest text-ink-3 border border-paper-3 hover:bg-paper transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN SALES TRACKER ───────────────────────────────────────────────────────
 function SalesTracker() {
   const importRef = useRef(null);
@@ -586,7 +673,7 @@ function SalesTracker() {
   });
   const [view,           setView]           = useState('entry');
   const [isEditingMenu,  setIsEditingMenu]  = useState(false);
-  const [entryDate,      setEntryDate]      = useState(new Date().toISOString().split('T')[0]);
+  const [entryDate,      setEntryDate]      = useState(localDateStr());
   const [quantities,     setQuantities]     = useState({});
   const [activeCategory, setActiveCategory] = useState('Coffee');
   const [newItem,        setNewItem]        = useState({name:'',price:'',category:'Coffee'});
@@ -603,7 +690,7 @@ function SalesTracker() {
       const s = localStorage.getItem('lota_soldout_v1');
       if (!s) return [];
       const d = JSON.parse(s);
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateStr();
       return d.date === today ? (d.ids || []) : [];
     } catch(e) { return []; }
   });
@@ -613,7 +700,8 @@ function SalesTracker() {
   const [splashVisible,      setSplashVisible]      = useState(true);
   const [splashFading,       setSplashFading]       = useState(false);
   const [splashImgReady,     setSplashImgReady]     = useState(false);
-  const [pinMode,            setPinMode]            = useState(() => localStorage.getItem('lota_pin') ? 'enter' : 'setup');
+  // 'enter' = a PIN is set (locked). 'none' = no PIN (no lock; opt in via Settings).
+  const [pinMode,            setPinMode]            = useState(() => localStorage.getItem('lota_pin') ? 'enter' : 'none');
   const [pinInput,           setPinInput]           = useState('');
   const [pinFirstEntry,      setPinFirstEntry]      = useState('');
   const [pinError,           setPinError]           = useState(false);
@@ -667,9 +755,26 @@ function SalesTracker() {
     }, 80);
   }, [pinInput, pinError, pinMode, pinFirstEntry]);
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr();
     localStorage.setItem('lota_soldout_v1', JSON.stringify({ date: today, ids: soldOutIds }));
   }, [soldOutIds]);
+  // Fallback: if image never loads/errors, show PIN after 3s anyway
+  useEffect(() => {
+    if (splashVisible && !splashImgReady) {
+      const t = setTimeout(() => setSplashImgReady(true), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [splashVisible, splashImgReady]);
+  // No PIN set → no lock: show the brand splash briefly, then auto-enter.
+  useEffect(() => {
+    if (pinMode === 'none') {
+      const t = setTimeout(() => {
+        setSplashFading(true);
+        setTimeout(() => setSplashVisible(false), 600);
+      }, 900);
+      return () => clearTimeout(t);
+    }
+  }, []); // once on mount
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -677,7 +782,7 @@ function SalesTracker() {
   }, []);
 
   // ── Computed values ──────────────────────────────────────────────────────────
-  const todayStr     = new Date().toISOString().split('T')[0];
+  const todayStr     = localDateStr();
   const currentMonth = todayStr.slice(0, 7);
   const todaySales   = entries.filter(e=>e.date===todayStr).reduce((s,e)=>s+e.revenue, 0);
   const monthSales   = entries.filter(e=>e.date.startsWith(currentMonth)).reduce((s,e)=>s+e.revenue, 0);
@@ -727,7 +832,7 @@ function SalesTracker() {
   // Yesterday close card
   const yesterdayStr = (() => {
     const d = new Date(todayStr + 'T12:00:00'); d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   })();
   const yesterdayEntries = entries.filter(e => e.date === yesterdayStr);
   const yesterdayTotal   = yesterdayEntries.reduce((s,e) => s+e.revenue, 0);
@@ -874,7 +979,7 @@ function SalesTracker() {
 
       {/* ── SPLASH + LOGIN ──────────────────────────────────────────────────── */}
       {splashVisible && (
-        <div className="fixed inset-0 z-50 flex flex-col"
+        <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
           style={{
             backgroundColor: '#e0d9cb',
             transition: 'opacity 0.6s ease',
@@ -883,29 +988,32 @@ function SalesTracker() {
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}>
 
-          {/* Logo */}
-          <div className="flex items-center justify-center" style={{flex:'0 0 52%'}}>
+          {/* Logo — decorative, does not gate PIN */}
+          <div className="flex items-center justify-center" style={{flex:'0 0 auto', width:'100%', paddingTop:'3vh', paddingBottom:'2vh'}}>
             <img
               src="./helmet%20launching%2002.png"
               alt="Lota Kopi"
               className={splashImgReady ? 'splash-stamp' : ''}
               onLoad={() => setSplashImgReady(true)}
-              style={{width:'78%', maxWidth:'300px', userSelect:'none', pointerEvents:'none', opacity: splashImgReady ? undefined : 0}}
+              onError={() => setSplashImgReady(true)}
+              style={{width:'280px', height:'280px', objectFit:'contain',
+                userSelect:'none', pointerEvents:'none',
+                opacity: splashImgReady ? 1 : 0, transition:'opacity 0.3s ease'}}
             />
           </div>
 
-          {/* PIN section — fades in after image loads */}
-          {splashImgReady && (
-            <div className="flex flex-col items-center justify-start px-8 pin-fade-in" style={{flex:'1'}}>
-              <p className="text-[10px] uppercase tracking-[0.2em] mb-5" style={{color:'#8d6852'}}>
+          {/* PIN section — hidden when there's no lock (pinMode 'none') */}
+          {pinMode !== 'none' && (
+          <div className="flex flex-col items-center justify-start px-8 pin-fade-in" style={{flex:'1', paddingBottom:'max(3vh, env(safe-area-inset-bottom, 16px))'}}>
+              <p className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{color:'#8d6852'}}>
                 {pinMode === 'setup' ? 'Create a PIN' : pinMode === 'confirm' ? 'Confirm PIN' : 'Enter PIN'}
               </p>
 
               {/* PIN dots */}
-              <div className={`flex gap-5 mb-7 ${pinError ? 'pin-shake' : ''}`}>
+              <div className={`flex gap-5 mb-5 ${pinError ? 'pin-shake' : ''}`}>
                 {[0,1,2,3].map(i => (
                   <div key={i} style={{
-                    width:14, height:14, borderRadius:'50%',
+                    width:13, height:13, borderRadius:'50%',
                     border: `2px solid ${pinError ? '#c0715a' : '#ae7556'}`,
                     backgroundColor: pinInput.length > i ? (pinError ? '#c0715a' : '#ae7556') : 'transparent',
                     transition: 'background-color 0.1s ease',
@@ -914,12 +1022,12 @@ function SalesTracker() {
               </div>
 
               {/* Number pad */}
-              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', width:'100%', maxWidth:'260px'}}>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', width:'100%', maxWidth:'260px'}}>
                 {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i) => (
                   k === '' ? <div key={i}/> :
                   <button key={i} onClick={() => handlePinKey(k)}
                     style={{
-                      padding:'14px 0', borderRadius:14, fontSize:20, fontWeight:500,
+                      padding:'11px 0', borderRadius:12, fontSize:20, fontWeight:500,
                       backgroundColor:'rgba(174,117,86,0.12)',
                       color:'#584c3a', border:'none', cursor:'pointer',
                     }}>
@@ -927,6 +1035,21 @@ function SalesTracker() {
                   </button>
                 ))}
               </div>
+
+              {/* Forgot PIN — non-destructive recovery (keeps all sales data) */}
+              {pinMode === 'enter' && (
+                <button onClick={() => {
+                  if (confirm('Reset your PIN?\n\nYour sales data and notes are kept — only the PIN is cleared. You can set a new one anytime in Settings.')) {
+                    localStorage.removeItem('lota_pin');
+                    setPinInput(''); setPinError(false); setPinFirstEntry('');
+                    setSplashFading(true);
+                    setTimeout(() => setSplashVisible(false), 600);
+                  }
+                }}
+                  className="mt-6 text-[10px] uppercase tracking-[0.2em]" style={{color:'#8d6852'}}>
+                  Forgot PIN?
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -1052,6 +1175,9 @@ function SalesTracker() {
               <RotateCcw size={14}/>Reset to Default Menu
             </button>
 
+            {/* Security — PIN management (C5) */}
+            <PinSettings showToast={showToast}/>
+
             {/* Add new item */}
             <div className="bg-paper-2 p-4 rounded-xl border border-paper-3">
               <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-3">Add New Item</p>
@@ -1059,13 +1185,15 @@ function SalesTracker() {
                 <input placeholder="Item name" value={newItem.name}
                   onChange={e=>setNewItem({...newItem, name:e.target.value})}
                   className="w-full bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink transition-colors"/>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-stretch">
                   <input type="number" placeholder="₱ Price" value={newItem.price}
                     onChange={e=>setNewItem({...newItem, price:e.target.value})}
-                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none focus:border-ink"/>
+                    className="flex-1 bg-white border border-paper-3 px-3 rounded-lg text-sm outline-none focus:border-ink"
+                    style={{height:'42px'}}/>
                   <select value={newItem.category}
                     onChange={e=>setNewItem({...newItem, category:e.target.value})}
-                    className="flex-1 bg-white border border-paper-3 px-3 py-2.5 rounded-lg text-sm outline-none">
+                    className="flex-1 bg-white border border-paper-3 px-3 rounded-lg text-sm outline-none"
+                    style={{height:'42px'}}>
                     {cats.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
@@ -1121,7 +1249,7 @@ function SalesTracker() {
                             ₱{item.price}
                           </button>
                         )}
-                        <button onClick={() => setMenu(m=>m.filter(x=>x.id!==item.id))}
+                        <button onClick={() => { if(confirm(`Delete "${item.name}" from the menu?`)) setMenu(m=>m.filter(x=>x.id!==item.id)); }}
                           className="text-ink-3 hover:text-red-500 active:text-red-600 p-1 transition-colors">
                           <Trash2 size={12}/>
                         </button>
@@ -1187,9 +1315,11 @@ function SalesTracker() {
 
             {/* Repeat last sale */}
             {!itemSearch && Object.keys(quantities).length === 0 && entries.length > 0 && (() => {
-              const last = entries[0];
+              // Most recent by timestamp — entries are sorted by date only, so
+              // entries[0] would be the *earliest* save of the latest day.
+              const last = [...entries].sort((a,b) => parseInt(b.id) - parseInt(a.id))[0];
               const lastDate = last.date === todayStr ? 'Today' :
-                last.date === (() => { const d = new Date(todayStr+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })()
+                last.date === (() => { const d = new Date(todayStr+'T12:00:00'); d.setDate(d.getDate()-1); return localDateStr(d); })()
                 ? 'Yesterday'
                 : new Date(last.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
               return (
@@ -1389,7 +1519,7 @@ function SalesTracker() {
       </div>
 
       {/* ── STICKY SAVE BAR ─────────────────────────────────────────────────── */}
-      {Object.keys(quantities).length > 0 && view==='entry' && !isEditingMenu && (
+      {view==='entry' && !isEditingMenu && (
         <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-paper-3 px-4 pt-3 z-30 shadow-xl slide-up"
           style={{paddingBottom:'max(16px, env(safe-area-inset-bottom, 16px))'}}>
           <div className="flex justify-between items-center mb-2.5">
@@ -1413,7 +1543,8 @@ function SalesTracker() {
             onChange={e => setEntryNote(e.target.value)}
             className="w-full bg-paper-2 border border-paper-3 px-3 py-2 rounded-lg text-xs outline-none focus:border-ink mb-2.5 text-ink placeholder:text-ink-3 transition-colors"/>
           <button onClick={saveEntry}
-            className="w-full py-3 text-white rounded-xl text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-90 active:opacity-75"
+            disabled={Object.keys(quantities).length === 0}
+            className="w-full py-3 text-white rounded-xl text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{backgroundColor:'var(--color-lota)'}}>
             Save Entry
           </button>
