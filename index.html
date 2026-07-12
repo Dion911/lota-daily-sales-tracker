@@ -15,13 +15,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="./vendor/tailwind.js"></script>
 <script>
 tailwind.config = {
   theme: {
     extend: {
       colors: {
-        ink: '#584c3a', 'ink-2': '#7a6e5c', 'ink-3': '#9a8e7e',
+        ink: '#584c3a', 'ink-2': '#71654f', 'ink-3': '#7d7263',
         paper: '#edeae2', 'paper-2': '#e1ded6', 'paper-3': '#d4d1c8', 'paper-4': '#c7c4bc',
         lota: '#ae7556', 'lota-2': '#8d5f42', 'lota-3': '#f5ebe3',
         gold: '#b89660',
@@ -48,7 +48,7 @@ tailwind.config = {
 <style>
 :root {
   /* colours — updated palette */
-  --color-ink:    #584c3a; --color-ink-2:  #7a6e5c; --color-ink-3:  #9a8e7e;
+  --color-ink:    #584c3a; --color-ink-2:  #71654f; --color-ink-3:  #7d7263;
   --color-paper:  #edeae2; --color-paper-2:#e1ded6; --color-paper-3:#d4d1c8; --color-paper-4:#c7c4bc;
   --color-lota:   #ae7556; --color-lota-2: #8d5f42; --color-lota-3: #f5ebe3;
   --color-gold:   #b89660;
@@ -128,6 +128,14 @@ button.whitespace-nowrap { border-radius: 12px !important; }
 button.whitespace-nowrap.text-ink-3 {
   background: rgba(255,255,255,0.45) !important;
   border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* ── Readability floor — no body label below 11px (#I4) ──────────── */
+/* Fixed-size count badges (w-4/5/6 circles) keep their small size; everything
+   else — labels, captions, pills, timestamps — floors at 11px. */
+.text-\[9px\]:not([class*="w-4"]):not([class*="w-5"]):not([class*="w-6"]),
+.text-\[10px\]:not([class*="w-4"]):not([class*="w-5"]):not([class*="w-6"]) {
+  font-size: 11px !important;
 }
 
 /* ── Typography — font-serif is now Inter ────────────────────────── */
@@ -227,10 +235,27 @@ html.dark svg rect[fill="#e2dcd0"] { fill: var(--color-paper-3); }
 </style>
 </head>
 <body class="bg-paper text-ink font-sans">
-<div id="root"></div>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<div id="root">
+  <!-- Boot placeholder — React replaces this on mount. Inline styles only,
+       so it still shows even if Tailwind/CDN never loads. -->
+  <div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#e0d9cb;color:#8d6852;font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;">
+    <div style="font-size:13px;letter-spacing:0.22em;text-transform:uppercase;font-weight:500;">Lota Sales</div>
+    <div style="font-size:11px;opacity:0.65;">Loading…</div>
+  </div>
+</div>
+<script>
+  // If the app hasn't mounted after 8s, the boot node is still here — the
+  // scripts likely failed. Show an actionable message instead of a dead screen.
+  setTimeout(function () {
+    var b = document.getElementById('boot');
+    if (b) b.innerHTML =
+      '<div style="text-align:center;padding:0 32px;font-size:13px;line-height:1.7;color:#8d6852;">' +
+      'Couldn’t load the app.<br>Check your connection and reload.</div>';
+  }, 8000);
+</script>
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./vendor/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -267,6 +292,7 @@ const SearchIco = p => <Ico {...p} d="M21 21l-4.35-4.35|M17 11a6 6 0 1 1-12 0 6 
 const MoonIco   = p => <Ico {...p} d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>;
 const SunIco    = p => <Ico {...p} d="M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7z|M12 1v2|M12 21v2|M4.22 4.22l1.42 1.42|M18.36 18.36l1.42 1.42|M1 12h2|M21 12h2|M4.22 19.78l1.42-1.42|M18.36 5.64l1.42-1.42"/>;
 const PenIco    = p => <Ico {...p} d="M12 20h9|M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>;
+const CameraIco = p => <Ico {...p} d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z|M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>;
 
 // ─── MENU DATA ────────────────────────────────────────────────────────────────
 const DEFAULT_MENU = [
@@ -539,6 +565,7 @@ function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
                       </div>
                       <button
                         onClick={() => { if(confirm('Delete this entry?')) setEntries(p=>p.filter(e=>e.id!==entry.id)); }}
+                        aria-label={`Delete ₱${entry.revenue} entry`}
                         className="p-2 text-ink-3 hover:text-red-500 active:text-red-600 transition-colors shrink-0">
                         <Trash2 size={14}/>
                       </button>
@@ -574,6 +601,308 @@ function HistoryView({ entries, menu, setEntries, fieldNotes, setFieldNotes }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── NOTEBOOK SCAN IMPORT ─────────────────────────────────────────────────────
+// Free, on-device flow: the user scans their handwritten page into a textarea
+// with iOS Live Text ("Scan Text" on the keyboard), and this parser turns the
+// raw lines into menu-matched entries. No API, no network, no cost.
+
+const NB_MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+const nbNorm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+
+// Find a date anywhere in the scanned text: "July 5", "Jul 5, 2026", "7/5/26"…
+function nbParseDate(text) {
+  const t = text.toLowerCase();
+  let m = t.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:\s*,?\s*(\d{4}))?/);
+  if (m) {
+    const y = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+    const mo = NB_MONTHS[m[1]], d = parseInt(m[2]);
+    if (d >= 1 && d <= 31) return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  m = t.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
+  if (m) {
+    let a = parseInt(m[1]), b = parseInt(m[2]), y = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+    if (y < 100) y += 2000;
+    let mo = a, d = b;
+    if (a > 12 && b <= 12) { mo = b; d = a; }   // day-first if unambiguous
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31)
+      return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return null;
+}
+
+// Handwriting aliases → a menu-name fragment to match against (analytics only —
+// off-menu lines are kept regardless).
+const NB_ALIASES = [
+  [/\bcanton\b|\bbihon\b|\bpancit\b/, 'noodles'],
+  [/\bpork\s*belly\b|\bliempo\b/,     'pork belly'],
+  [/\bchicken\b/,                     'fried chicken'],
+  [/\bice\s*candy\b/,                 'ice candy'],
+  [/\bice\s*cream\b/,                 'ice cream'],
+  [/\byakult\b/,                      'yakult'],
+  [/\btapsilog\b|\btapa\b/,           'tapsilog'],
+  [/\btocilog\b|\btoci\b/,            'tocilog'],
+  [/\bhumba\b/,                       'humba'],
+  [/\bcoke\b|\bsprite\b|\broyal\b|\bsakto\b|\bmt\.?\s*dew|\bmountain\s*dew\b/, 'coke'],
+  [/\bmineral\b|\bwater\b/,           'mineral water'],
+];
+
+// Match a free-text label to a menu item id, or null if off-menu.
+function nbMatchMenu(label, menu) {
+  const n = nbNorm(label);
+  if (!n) return null;
+  for (const [re, frag] of NB_ALIASES) {
+    if (re.test(n)) {
+      const cands = menu.filter(m => nbNorm(m.name).includes(frag));
+      if (cands.length) {
+        // prefer an exact name match (so "ice cream" → "Ice Cream", not the waffle)
+        return (cands.find(m => nbNorm(m.name) === frag) || cands[0]).id;
+      }
+    }
+  }
+  let best = null, bestScore = 0;
+  menu.forEach(m => {
+    const mn = nbNorm(m.name), mt = mn.split(' ').filter(Boolean), lt = n.split(' ').filter(Boolean);
+    let score = 0;
+    if (mn === n) score = 1;
+    else if (mn.includes(n) || n.includes(mn)) score = 0.85;
+    else {
+      const ov = mt.filter(tok => lt.some(l =>
+        l === tok || (l.length > 3 && tok.startsWith(l)) || (tok.length > 3 && l.startsWith(tok))
+      )).length;
+      score = (ov / Math.max(mt.length, 1)) * 0.8;
+    }
+    if (score > bestScore) { bestScore = score; best = m; }
+  });
+  return bestScore >= 0.5 ? best.id : null;
+}
+
+// Amount-first parser. The notebook is a cash ledger:  "<qty>. <item> - <amount>".
+// Leading number = quantity, trailing number = the actual peso amount for the line.
+// Every line with an amount is captured (revenue = sum of amounts); menu matching
+// is only for category analytics and never drops a line.
+function nbParseLines(text, menu) {
+  const lines = [];
+  let pageTotal = null;
+  const standaloneNums = [];
+
+  text.split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    const low = line.toLowerCase();
+
+    // Header / meta noise — petty cash, login times, time-of-day markers
+    if (/petty|login|actual\s*log|opening|closing|\bfloat\b/.test(low)) return;
+    if (/\d\s*(nn|am|pm|noon)\b/.test(low)) return;   // "12nn", "730pm"
+    if (/\d\s*:\s*\d/.test(low)) return;              // "12:30" time
+
+    // Explicit total line
+    if (/\btotals?\b|\btot\b|\blot\b/.test(low)) {
+      const ns = line.match(/\d[\d,]*(?:\.\d+)?/g);
+      if (ns) pageTotal = parseFloat(ns[ns.length - 1].replace(/,/g, ''));
+      return;
+    }
+
+    // A pure date header ("December 11, 2025") — no "number - number" pair
+    if (/^\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)/.test(low)
+        && !/\d\s*[-–—]\s*\d/.test(line)) return;
+
+    const nums = (line.match(/\d[\d,]*(?:\.\d+)?/g) || []).map(x => parseFloat(x.replace(/,/g, '')));
+    if (!nums.length) return;
+
+    // Standalone number (no letters) → candidate page total, not a sale line
+    if (!/[a-z]/i.test(line)) { standaloneNums.push(nums[nums.length - 1]); return; }
+
+    // Leading quantity: "N.", "N)" or "N " before the item name
+    let qty = 1, rest = line;
+    const lead = line.match(/^\s*(\d+)\s*[\.\)]?\s*(?=[a-z])/i);
+    if (lead) { qty = parseInt(lead[1]); rest = line.slice(lead[0].length); }
+
+    // Amount = the last number on the remainder
+    const restNums = (rest.match(/\d[\d,]*(?:\.\d+)?/g) || []).map(x => parseFloat(x.replace(/,/g, '')));
+    if (!restNums.length) return;
+    const amount = restNums[restNums.length - 1];
+
+    // Label = remainder minus the trailing amount + separators + any "x2" markers
+    let label = rest
+      .replace(/[-–—:]*\s*\d[\d,]*(?:\.\d+)?\s*$/, '')
+      .replace(/[x×]\s*\d+/gi, '')
+      .replace(/\s+/g, ' ').trim();
+    if (!label) return;
+
+    lines.push({ raw: line, qty: Math.max(1, qty), label, amount, itemId: nbMatchMenu(label, menu) });
+  });
+
+  // Prefer an explicit "total"; otherwise the largest standalone number on the page
+  if (pageTotal == null && standaloneNums.length) pageTotal = Math.max(...standaloneNums);
+  return { lines, pageTotal };
+}
+
+function NotebookImport({ menu, todayStr, onSave, onCancel }) {
+  const [step,      setStep]      = useState('input');   // input | review
+  const [text,      setText]      = useState('');
+  const [date,      setDate]      = useState(todayStr);
+  const [lines,     setLines]     = useState([]);
+  const [pageTotal, setPageTotal] = useState(null);
+
+  const doParse = () => {
+    const parsed = nbParseLines(text, menu);
+    setLines(parsed.lines);
+    setPageTotal(parsed.pageTotal);
+    setDate(nbParseDate(text) || todayStr);
+    setStep('review');
+  };
+
+  const setQty    = (i, d)  => setLines(p => p.map((l,idx) => idx===i ? {...l, qty: Math.max(1, l.qty + d)} : l));
+  const setAmount = (i, v)  => setLines(p => p.map((l,idx) => idx===i ? {...l, amount: Math.max(0, parseFloat(v)||0)} : l));
+  const setItem   = (i, id) => setLines(p => p.map((l,idx) => idx===i ? {...l, itemId: id || null} : l));
+  const dropLine  = (i)     => setLines(p => p.filter((_,idx) => idx !== i));
+
+  const total = lines.reduce((s,l) => s + (l.amount||0), 0);
+  const matchedCount = lines.filter(l => l.itemId).length;
+  const offMenuCount = lines.length - matchedCount;
+  const mismatch = pageTotal != null && Math.abs(pageTotal - total) > 0.5;
+
+  const save = () => { if (lines.length) onSave(date, lines); };
+
+  return (
+    <div className="fixed inset-0 z-40 bg-paper overflow-y-auto"
+      style={{paddingTop:'env(safe-area-inset-top, 0px)', paddingBottom:'env(safe-area-inset-bottom, 0px)'}}>
+      <div className="p-4 space-y-4 max-w-lg mx-auto">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <CameraIco size={16} className="text-lota"/>
+            <h2 className="text-[11px] uppercase tracking-widest font-bold text-ink-2">Scan Notebook Page</h2>
+          </div>
+          <button onClick={onCancel} aria-label="Close notebook scan"
+            className="p-2 text-ink-3 hover:text-ink transition-colors"><XIco size={16}/></button>
+        </div>
+
+        {step === 'input' && (
+          <div className="space-y-3 fade-in">
+            <div className="bg-lota-3 rounded-xl px-4 py-3 border border-lota/20">
+              <p className="text-xs text-ink-2 leading-relaxed">
+                <span className="font-bold">1.</span> Tap the box below —{' '}
+                <span className="font-bold">2.</span> tap the <span className="font-bold">Scan Text</span> button
+                (camera icon) on your keyboard — <span className="font-bold">3.</span> point your iPhone at the
+                notebook page. The text appears here. You can also type or paste.
+              </p>
+            </div>
+            <textarea
+              value={text} onChange={e => setText(e.target.value)}
+              placeholder={"December 11, 2025\n1. coke - 50\n2. mighty - 20\n1. tapsilog - 80\n940"}
+              rows={10} autoFocus
+              className="w-full bg-white border border-paper-3 px-3 py-3 rounded-xl text-sm outline-none focus:border-ink text-ink leading-relaxed"
+              style={{fontFamily:'inherit', resize:'vertical'}}/>
+            <button onClick={doParse} disabled={!text.trim()}
+              className="w-full py-3 text-white rounded-xl text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40"
+              style={{backgroundColor:'var(--color-lota)'}}>
+              Read Page
+            </button>
+          </div>
+        )}
+
+        {step === 'review' && (
+          <div className="space-y-3 fade-in">
+            {/* Date */}
+            <div className="flex items-center justify-between bg-paper-2 p-3 rounded-xl border border-paper-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-lota"/>
+                <span className="text-xs uppercase tracking-wider text-ink-2">Date</span>
+              </div>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="bg-transparent text-xs font-bold text-ink outline-none cursor-pointer"/>
+            </div>
+
+            {lines.length > 0 && (
+              <p className="text-[11px] text-ink-3 px-1">
+                {lines.length} lines · {matchedCount} on menu · {offMenuCount} off-menu (still counted)
+              </p>
+            )}
+            {lines.length === 0 && (
+              <p className="text-center text-ink-3 text-xs italic py-6">
+                No sale lines found. Go back and check the scan.
+              </p>
+            )}
+
+            {lines.map((l, i) => {
+              const off = !l.itemId;
+              return (
+                <div key={i} className={`bg-white rounded-xl border p-3 space-y-2 ${off ? 'border-gold/40' : 'border-paper-3'}`}>
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="text-[11px] text-ink-3 italic flex-1 break-words">"{l.raw}"</p>
+                    <button onClick={() => dropLine(i)} aria-label={`Remove line ${l.raw}`}
+                      className="p-1 text-ink-3 hover:text-red-500 shrink-0"><Trash2 size={13}/></button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* qty */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => setQty(i,-1)} aria-label="Decrease quantity"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 active:scale-90 transition-all"><Minus size={11}/></button>
+                      <span className="text-sm font-bold w-5 text-center tabular-nums text-lota">{l.qty}</span>
+                      <button onClick={() => setQty(i,1)} aria-label="Increase quantity"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 active:scale-90 transition-all"><Plus size={11}/></button>
+                    </div>
+                    {/* menu match (optional) */}
+                    <select value={l.itemId || ''} onChange={e => setItem(i, e.target.value)}
+                      aria-label={`Menu match for ${l.label}`}
+                      className="flex-1 min-w-0 bg-paper-2 border border-paper-3 px-2 rounded-lg text-xs outline-none text-ink"
+                      style={{height:'38px'}}>
+                      <option value="">⊘ Off-menu: {l.label}</option>
+                      {menu.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                    {/* amount (the money) */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <span className="text-sm text-ink-3 font-serif">₱</span>
+                      <input type="number" inputMode="numeric" value={l.amount}
+                        onChange={e => setAmount(i, e.target.value)} aria-label={`Amount for ${l.label}`}
+                        className="w-14 bg-paper-2 border border-paper-3 px-2 rounded-lg text-sm text-center outline-none focus:border-ink text-ink"
+                        style={{height:'38px'}}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Totals + save */}
+            <div className="bg-white rounded-xl border border-paper-3 p-4 space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] uppercase tracking-widest text-ink-3">Day Total</span>
+                <span className="font-serif text-2xl text-ink">₱{total.toLocaleString()}</span>
+              </div>
+              {pageTotal != null && (
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[10px] uppercase tracking-widest text-ink-3">Total on page</span>
+                  <span className="text-sm font-serif" style={{color: mismatch ? '#b56a5a' : '#6a9e6a'}}>
+                    ₱{pageTotal.toLocaleString()} {mismatch ? '· doesn’t match' : '· matches ✓'}
+                  </span>
+                </div>
+              )}
+              {mismatch && (
+                <p className="text-[11px] leading-relaxed pt-1" style={{color:'#b56a5a'}}>
+                  Your page total (₱{pageTotal.toLocaleString()}) differs from the sum above by
+                  ₱{Math.abs(pageTotal - total).toLocaleString()} — a line was likely mis-read. Check the amounts.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setStep('input')}
+                className="px-4 py-3 rounded-xl text-[11px] uppercase tracking-widest text-ink-3 border border-paper-3 hover:bg-paper-2 transition-colors">
+                Back
+              </button>
+              <button onClick={save} disabled={lines.length === 0}
+                className="flex-1 py-3 text-white rounded-xl text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-40"
+                style={{backgroundColor:'var(--color-lota)'}}>
+                Save {lines.length > 0 ? `· ₱${total.toLocaleString()}` : ''}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -674,6 +1003,8 @@ function SalesTracker() {
   const [view,           setView]           = useState('entry');
   const [isEditingMenu,  setIsEditingMenu]  = useState(false);
   const [entryDate,      setEntryDate]      = useState(localDateStr());
+  // "Today" as state so an app left open past midnight refreshes (#I8).
+  const [todayStr,       setTodayStr]       = useState(localDateStr());
   const [quantities,     setQuantities]     = useState({});
   const [activeCategory, setActiveCategory] = useState('Coffee');
   const [newItem,        setNewItem]        = useState({name:'',price:'',category:'Coffee'});
@@ -696,6 +1027,7 @@ function SalesTracker() {
   });
   const [entryNote,          setEntryNote]          = useState('');
   const [itemSearch,         setItemSearch]         = useState('');
+  const [showImport,         setShowImport]         = useState(false);
   const [dismissedYestCard,  setDismissedYestCard]  = useState(false);
   const [splashVisible,      setSplashVisible]      = useState(true);
   const [splashFading,       setSplashFading]       = useState(false);
@@ -775,6 +1107,29 @@ function SalesTracker() {
       return () => clearTimeout(t);
     }
   }, []); // once on mount
+  // Day rollover: refresh "today" when the local date changes (interval +
+  // when the app is brought back to the foreground). Also clears yesterday's
+  // sold-out flags so the new day starts fresh.
+  useEffect(() => {
+    let known = localDateStr();
+    const check = () => {
+      const d = localDateStr();
+      if (d !== known) {
+        known = d;
+        setTodayStr(d);
+        setSoldOutIds([]);
+        setDismissedYestCard(false);
+      }
+    };
+    const iv = setInterval(check, 60000);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => {
+      clearInterval(iv);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+    };
+  }, []);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -782,7 +1137,6 @@ function SalesTracker() {
   }, []);
 
   // ── Computed values ──────────────────────────────────────────────────────────
-  const todayStr     = localDateStr();
   const currentMonth = todayStr.slice(0, 7);
   const todaySales   = entries.filter(e=>e.date===todayStr).reduce((s,e)=>s+e.revenue, 0);
   const monthSales   = entries.filter(e=>e.date.startsWith(currentMonth)).reduce((s,e)=>s+e.revenue, 0);
@@ -817,14 +1171,40 @@ function SalesTracker() {
   const saveEntry = () => {
     if (!Object.keys(quantities).length) return;
     const saved = calcRevenue;
+    const isToday = entryDate === todayStr;
     setEntries(prev => [
       ...prev,
       {id:Date.now().toString(), date:entryDate, items:{...quantities}, revenue:saved, notes:entryNote.trim()}
     ].sort((a,b) => b.date.localeCompare(a.date)));
     setQuantities({});
     setEntryNote('');
-    setView('summary');
-    showToast(`₱${saved.toLocaleString()} saved!`);
+    // Today → jump to Summary. Past date → stay put (Summary only shows today,
+    // so switching would look like the save failed) and name the date in the toast.
+    if (isToday) {
+      setView('summary');
+      showToast(`₱${saved.toLocaleString()} saved!`);
+    } else {
+      const label = new Date(entryDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      showToast(`₱${saved.toLocaleString()} saved to ${label}`);
+    }
+  };
+
+  // Save a reviewed notebook scan (amount-first: revenue = sum of written amounts).
+  const saveNotebookImport = (date, lines) => {
+    const revenue = lines.reduce((s,l) => s + (l.amount||0), 0);
+    if (!revenue) return;
+    // Matched menu items feed the category charts; every line (matched + off-menu)
+    // is preserved in the note so the full ledger is never lost.
+    const items = {};
+    lines.forEach(l => { if (l.itemId) items[l.itemId] = (items[l.itemId]||0) + l.qty; });
+    const note = 'Scan: ' + lines.map(l => `${l.qty}× ${l.label} ₱${l.amount}`).join(', ');
+    setEntries(prev => [
+      ...prev,
+      {id:Date.now().toString(), date, items, revenue, notes: note}
+    ].sort((a,b) => b.date.localeCompare(a.date)));
+    setShowImport(false);
+    const label = date === todayStr ? 'today' : new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    showToast(`₱${revenue.toLocaleString()} imported to ${label}`);
   };
 
   const todayEntries  = entries.filter(e => e.date===todayStr);
@@ -899,44 +1279,59 @@ function SalesTracker() {
   };
 
   // #11 — Import CSV
+  // Full CSV tokenizer — respects quotes across commas AND newlines, so notes
+  // containing line breaks no longer corrupt the row split.
+  const parseCSV = (text) => {
+    const rows = [];
+    let row = [], cur = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQ) {
+        if (ch === '"') {
+          if (text[i+1] === '"') { cur += '"'; i++; }   // escaped quote
+          else inQ = false;
+        } else cur += ch;
+      } else if (ch === '"') {
+        inQ = true;
+      } else if (ch === ',') {
+        row.push(cur); cur = '';
+      } else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i+1] === '\n') i++;      // CRLF
+        row.push(cur); rows.push(row); row = []; cur = '';
+      } else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(r => r.some(c => c.trim() !== ''));
+  };
+
   const importCSV = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const lines = ev.target.result.split('\n').filter(l=>l.trim());
-        const header = lines[0].toLowerCase();
-        const hasIdCol = header.startsWith('"id"') || header.startsWith('id,') || header.startsWith('id"');
-        const rows = lines.slice(1);
+        const rows = parseCSV(ev.target.result);
+        if (rows.length < 2) { showToast('No rows found in CSV.'); return; }
+        const header = rows[0].join(',').toLowerCase();
+        const hasIdCol = /(^|,)"?id"?(,|$)/.test(header);
         const existingIds = new Set(entries.map(e=>e.id));
         const newEntries = [];
+        let skippedDupes = 0, badRows = 0;
+        const unmatched = new Set();
 
-        rows.forEach(row => {
-          // Simple quoted-CSV parser
-          const cols = [];
-          let cur = '', inQ = false;
-          for (const ch of row) {
-            if (ch==='"') { inQ=!inQ; }
-            else if (ch===',' && !inQ) { cols.push(cur); cur=''; }
-            else { cur+=ch; }
-          }
-          cols.push(cur);
-
+        rows.slice(1).forEach(cols => {
           let id, date, revenue, notes, itemsStr;
-          if (hasIdCol) {
-            [id, date, , revenue, notes, itemsStr] = cols;
-          } else {
-            [date, , revenue, notes, itemsStr] = cols;
-            id = null;
-          }
+          if (hasIdCol) { [id, date, , revenue, notes, itemsStr] = cols; }
+          else          { [date, , revenue, notes, itemsStr] = cols; id = null; }
+
           date = (date||'').trim();
-          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) { badRows++; return; }
 
           const entryId = (id && id.trim())
             ? id.trim()
             : String(new Date(date+'T12:00:00').getTime() + Math.round(Math.random()*9999));
-          if (existingIds.has(entryId)) return;
+          if (existingIds.has(entryId)) { skippedDupes++; return; }
+          existingIds.add(entryId);   // guard against dupes within the same file
 
           const items = {};
           if (itemsStr) {
@@ -945,6 +1340,7 @@ function SalesTracker() {
               if (m) {
                 const mi = menu.find(x=>x.name===m[2].trim());
                 if (mi) items[mi.id] = parseInt(m[1]);
+                else unmatched.add(m[2].trim());   // renamed/deleted menu item
               }
             });
           }
@@ -953,9 +1349,17 @@ function SalesTracker() {
 
         if (newEntries.length > 0) {
           setEntries(prev=>[...prev,...newEntries].sort((a,b)=>b.date.localeCompare(a.date)));
-          showToast(`${newEntries.length} entr${newEntries.length===1?'y':'ies'} imported!`);
+          const parts = [`${newEntries.length} imported`];
+          if (unmatched.size)  parts.push(`${unmatched.size} item${unmatched.size>1?'s':''} unmatched`);
+          if (skippedDupes)    parts.push(`${skippedDupes} duplicate${skippedDupes>1?'s':''} skipped`);
+          showToast(parts.join(' · '));
+          if (unmatched.size) {
+            console.warn('Unmatched menu items on import:', [...unmatched].join(', '));
+          }
+        } else if (skippedDupes) {
+          showToast(`Nothing new — ${skippedDupes} duplicate${skippedDupes>1?'s':''} skipped.`);
         } else {
-          showToast('Nothing new to import.');
+          showToast(badRows ? 'No valid rows — check CSV format.' : 'Nothing new to import.');
         }
       } catch(err) {
         showToast('Import failed — check CSV format.');
@@ -1066,10 +1470,12 @@ function SalesTracker() {
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setDarkMode(v => !v)}
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors opacity-80">
                 {darkMode ? <SunIco size={15}/> : <MoonIco size={15}/>}
               </button>
               <button onClick={() => setIsEditingMenu(v => !v)}
+                aria-label={isEditingMenu ? 'Close settings' : 'Open settings'}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors">
                 {isEditingMenu ? <XIco size={16}/> : <Settings size={16}/>}
               </button>
@@ -1129,7 +1535,7 @@ function SalesTracker() {
       )}
 
       {/* ── CONTENT AREA ────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-4" style={{paddingBottom:'160px'}}>
+      <div className="flex-1 overflow-y-auto p-4" style={{paddingBottom:'200px'}}>
 
         {/* ─ SETTINGS ─ */}
         {isEditingMenu && (
@@ -1146,7 +1552,7 @@ function SalesTracker() {
                   onChange={e => setDailyTarget(parseInt(e.target.value) || 0)}
                   className="flex-1 bg-white border border-paper-3 px-3 py-2 rounded-lg text-sm outline-none focus:border-ink transition-colors"/>
                 {dailyTarget > 0 && (
-                  <button onClick={() => setDailyTarget(0)} className="text-ink-3 hover:text-red-400 p-1 transition-colors">
+                  <button onClick={() => setDailyTarget(0)} aria-label="Clear daily target" className="text-ink-3 hover:text-red-400 p-1 transition-colors">
                     <XIco size={14}/>
                   </button>
                 )}
@@ -1229,6 +1635,7 @@ function SalesTracker() {
                       <div className="flex items-center gap-1 shrink-0">
                         <button onClick={() => toggleSoldOut(item.id)}
                           title={isSoldOut(item.id) ? 'Mark available' : 'Mark sold out today'}
+                          aria-label={isSoldOut(item.id) ? `Mark ${item.name} available` : `Mark ${item.name} sold out today`}
                           className={`p-1.5 rounded-lg transition-colors ${isSoldOut(item.id) ? 'text-red-400 bg-red-50' : 'text-ink-3 hover:text-red-400'}`}>
                           <Ban size={12}/>
                         </button>
@@ -1240,16 +1647,18 @@ function SalesTracker() {
                             <button onClick={() => {
                               setMenu(m=>m.map(x=>x.id===item.id?{...x,price:parseFloat(editPriceVal)||x.price}:x));
                               setEditPriceId(null);
-                            }} className="text-lota p-1"><Check size={12}/></button>
-                            <button onClick={() => setEditPriceId(null)} className="text-ink-3 p-1"><XIco size={12}/></button>
+                            }} aria-label="Save price" className="text-lota p-1"><Check size={12}/></button>
+                            <button onClick={() => setEditPriceId(null)} aria-label="Cancel price edit" className="text-ink-3 p-1"><XIco size={12}/></button>
                           </div>
                         ) : (
                           <button onClick={() => { setEditPriceId(item.id); setEditPriceVal(item.price.toString()); }}
+                            aria-label={`Edit price of ${item.name}, currently ₱${item.price}`}
                             className="text-sm font-serif italic text-ink-3 hover:text-lota px-2 transition-colors">
                             ₱{item.price}
                           </button>
                         )}
                         <button onClick={() => { if(confirm(`Delete "${item.name}" from the menu?`)) setMenu(m=>m.filter(x=>x.id!==item.id)); }}
+                          aria-label={`Delete ${item.name} from menu`}
                           className="text-ink-3 hover:text-red-500 active:text-red-600 p-1 transition-colors">
                           <Trash2 size={12}/>
                         </button>
@@ -1269,7 +1678,7 @@ function SalesTracker() {
             {/* Yesterday close card */}
             {yesterdayEntries.length > 0 && todayEntries.length === 0 && !dismissedYestCard && (
               <div className="bg-white rounded-xl border border-paper-3 px-4 py-3 relative fade-in">
-                <button onClick={() => setDismissedYestCard(true)}
+                <button onClick={() => setDismissedYestCard(true)} aria-label="Dismiss yesterday summary"
                   className="absolute top-2 right-2 p-1 text-ink-3 hover:text-ink transition-colors">
                   <XIco size={12}/>
                 </button>
@@ -1306,12 +1715,24 @@ function SalesTracker() {
                 value={itemSearch} onChange={e => setItemSearch(e.target.value)}
                 className="w-full bg-white border border-paper-3 pl-9 pr-8 py-2.5 rounded-xl text-sm outline-none focus:border-ink-3 transition-colors text-ink"/>
               {itemSearch && (
-                <button onClick={() => setItemSearch('')}
+                <button onClick={() => setItemSearch('')} aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors">
                   <XIco size={13}/>
                 </button>
               )}
             </div>
+
+            {/* Scan notebook page */}
+            {!itemSearch && (
+              <button onClick={() => setShowImport(true)}
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-white rounded-xl border border-paper-3 hover:border-lota/40 active:bg-paper-2 transition-all">
+                <div className="flex items-center gap-2.5">
+                  <CameraIco size={13} className="text-lota shrink-0"/>
+                  <span className="text-xs text-ink-2">Scan notebook page</span>
+                </div>
+                <span className="text-[10px] text-ink-3">Free · on-device</span>
+              </button>
+            )}
 
             {/* Repeat last sale */}
             {!itemSearch && Object.keys(quantities).length === 0 && entries.length > 0 && (() => {
@@ -1383,17 +1804,17 @@ function SalesTracker() {
                         Sold Out
                       </span>
                     ) : (
-                      <div className="flex items-center gap-4">
-                        <button onClick={() => handleQty(item.id,-1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
-                          <Minus size={12}/>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleQty(item.id,-1)} aria-label={`Remove one ${item.name}`}
+                          className="w-11 h-11 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
+                          <Minus size={14}/>
                         </button>
                         <span className={`text-sm font-bold w-5 text-center tabular-nums ${quantities[item.id]?'text-lota':'text-ink-3'}`}>
                           {quantities[item.id]||0}
                         </span>
-                        <button onClick={() => handleQty(item.id,1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
-                          <Plus size={12}/>
+                        <button onClick={() => handleQty(item.id,1)} aria-label={`Add one ${item.name}`}
+                          className="w-11 h-11 flex items-center justify-center rounded-full bg-paper-2 text-ink-3 hover:text-lota active:scale-90 transition-all">
+                          <Plus size={14}/>
                         </button>
                       </div>
                     )}
@@ -1492,6 +1913,7 @@ function SalesTracker() {
                       </div>
                       <button
                         onClick={() => { if(confirm('Delete this entry?')) setEntries(p=>p.filter(e=>e.id!==entry.id)); }}
+                        aria-label={`Delete ₱${entry.revenue} entry`}
                         className="p-2 text-ink-3 hover:text-red-500 active:text-red-600 transition-colors">
                         <Trash2 size={14}/>
                       </button>
@@ -1532,10 +1954,12 @@ function SalesTracker() {
                 <p className="text-[10px] uppercase tracking-widest text-ink-3 mb-0.5">Items</p>
                 <p className="font-serif text-2xl text-ink">{totalItems}</p>
               </div>
-              <button onClick={() => setQuantities({})}
-                className="text-[10px] uppercase tracking-widest text-ink-3 hover:text-red-400 active:text-red-500 transition-colors border-b border-ink-3/30 pb-px">
-                Clear
-              </button>
+              {totalItems > 0 && (
+                <button onClick={() => setQuantities({})} aria-label="Clear all quantities"
+                  className="text-[10px] uppercase tracking-widest text-ink-3 hover:text-red-400 active:text-red-500 transition-colors border-b border-ink-3/30 pb-px">
+                  Clear
+                </button>
+              )}
             </div>
           </div>
           <input type="text" placeholder="Add a note… rainy day, out of cold brew, etc."
@@ -1551,9 +1975,15 @@ function SalesTracker() {
         </div>
       )}
 
+      {/* ── NOTEBOOK SCAN ───────────────────────────────────────────────────── */}
+      {showImport && (
+        <NotebookImport menu={menu} todayStr={todayStr}
+          onSave={saveNotebookImport} onCancel={() => setShowImport(false)}/>
+      )}
+
       {/* ── TOAST ───────────────────────────────────────────────────────────── */}
       {toast && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-ink text-paper px-5 py-2.5 rounded-full text-xs font-medium shadow-xl tracking-wide fade-in whitespace-nowrap">
+        <div className="fixed bottom-48 left-1/2 -translate-x-1/2 z-50 bg-ink text-paper px-5 py-2.5 rounded-full text-xs font-medium shadow-xl tracking-wide fade-in whitespace-nowrap">
           {toast}
         </div>
       )}

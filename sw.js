@@ -1,4 +1,4 @@
-const CACHE = 'lota-sales-v13';
+const CACHE = 'lota-sales-v16';
 
 // Files to pre-cache on install
 const PRECACHE = [
@@ -7,6 +7,11 @@ const PRECACHE = [
   './icon.svg',
   './icon-maskable.svg',
   './helmet%20launching%2002.png',
+  // Vendored libraries — no runtime CDN dependency (fully offline-capable)
+  './vendor/react.production.min.js',
+  './vendor/react-dom.production.min.js',
+  './vendor/babel.min.js',
+  './vendor/tailwind.js',
 ];
 
 self.addEventListener('install', e => {
