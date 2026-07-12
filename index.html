@@ -783,13 +783,23 @@ function NotebookImport({ menu, todayStr, onSave, onCancel }) {
 
         {step === 'input' && (
           <div className="space-y-3 fade-in">
-            <div className="bg-lota-3 rounded-xl px-4 py-3 border border-lota/20">
-              <p className="text-xs text-ink-2 leading-relaxed">
-                <span className="font-bold">1.</span> Tap the box below —{' '}
-                <span className="font-bold">2.</span> tap the <span className="font-bold">Scan Text</span> button
-                (camera icon) on your keyboard — <span className="font-bold">3.</span> point your iPhone at the
-                notebook page. The text appears here. You can also type or paste.
-              </p>
+            <div className="bg-lota-3 rounded-xl px-4 py-3 border border-lota/20 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-sm shrink-0">📱</span>
+                <p className="text-xs text-ink-2 leading-relaxed">
+                  <span className="font-bold">On iPhone:</span> tap the box below, then tap{' '}
+                  <span className="font-bold">Scan Text</span> (the ⧉ camera icon above the keyboard, or
+                  press-and-hold in the box → <span className="font-bold">Scan Text</span>). Point at your
+                  notebook page and the writing drops in.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-sm shrink-0">💻</span>
+                <p className="text-xs text-ink-2 leading-relaxed">
+                  <span className="font-bold">On a computer:</span> Scan Text isn't available — just type
+                  or paste a page into the box.
+                </p>
+              </div>
             </div>
             <textarea
               value={text} onChange={e => setText(e.target.value)}
