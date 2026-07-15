@@ -756,6 +756,18 @@ function NotebookImport({ menu, todayStr, onSave, onCancel }) {
     setStep('review');
   };
 
+  // One-tap paste — the reliable iPhone path (installed web apps often hide
+  // the "Scan Text" menu, so the flow is: Camera app Live Text → Copy → this).
+  const pasteClipboard = async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (t && t.trim()) setText(prev => prev.trim() ? prev + '\n' + t : t);
+      else alert('Clipboard is empty.\n\nScan the page in the Camera app first (Live Text → Select All → Copy), then tap Paste again.');
+    } catch (e) {
+      alert('Couldn\'t read the clipboard.\n\nTap inside the box, press-and-hold, and choose Paste instead.');
+    }
+  };
+
   const setQty    = (i, d)  => setLines(p => p.map((l,idx) => idx===i ? {...l, qty: Math.max(1, l.qty + d)} : l));
   const setAmount = (i, v)  => setLines(p => p.map((l,idx) => idx===i ? {...l, amount: Math.max(0, parseFloat(v)||0)} : l));
   const setItem   = (i, id) => setLines(p => p.map((l,idx) => idx===i ? {...l, itemId: id || null} : l));
@@ -783,24 +795,41 @@ function NotebookImport({ menu, todayStr, onSave, onCancel }) {
 
         {step === 'input' && (
           <div className="space-y-3 fade-in">
-            <div className="bg-lota-3 rounded-xl px-4 py-3 border border-lota/20 space-y-2">
+            <div className="bg-lota-3 rounded-xl px-4 py-3 border border-lota/20 space-y-2.5">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-lota-2">How to scan (iPhone)</p>
               <div className="flex items-start gap-2">
-                <span className="text-sm shrink-0">📱</span>
+                <span className="text-xs font-bold text-lota shrink-0 w-4">1.</span>
                 <p className="text-xs text-ink-2 leading-relaxed">
-                  <span className="font-bold">On iPhone:</span> tap the box below, then tap{' '}
-                  <span className="font-bold">Scan Text</span> (the ⧉ camera icon above the keyboard, or
-                  press-and-hold in the box → <span className="font-bold">Scan Text</span>). Point at your
-                  notebook page and the writing drops in.
+                  Open the <span className="font-bold">Camera</span> app and point at your notebook page.
                 </p>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-sm shrink-0">💻</span>
+                <span className="text-xs font-bold text-lota shrink-0 w-4">2.</span>
                 <p className="text-xs text-ink-2 leading-relaxed">
-                  <span className="font-bold">On a computer:</span> Scan Text isn't available — just type
-                  or paste a page into the box.
+                  Tap the <span className="font-bold">Live Text</span> button that appears in the corner
+                  (three lines in a viewfinder frame).
                 </p>
               </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-lota shrink-0 w-4">3.</span>
+                <p className="text-xs text-ink-2 leading-relaxed">
+                  Tap <span className="font-bold">Select All</span>, then <span className="font-bold">Copy</span>.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-lota shrink-0 w-4">4.</span>
+                <p className="text-xs text-ink-2 leading-relaxed">
+                  Come back here and tap <span className="font-bold">Paste copied text</span> below.
+                </p>
+              </div>
+              <p className="text-[11px] text-ink-3 leading-relaxed pt-0.5">
+                On a computer, just type or paste into the box.
+              </p>
             </div>
+            <button onClick={pasteClipboard}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl border border-paper-3 text-[11px] uppercase tracking-widest font-bold text-ink-2 hover:border-lota/40 active:bg-paper-2 transition-all">
+              📋 Paste copied text
+            </button>
             <textarea
               value={text} onChange={e => setText(e.target.value)}
               placeholder={"December 11, 2025\n1. coke - 50\n2. mighty - 20\n1. tapsilog - 80\n940"}
